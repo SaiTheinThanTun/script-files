@@ -109,12 +109,11 @@ length(unique(umk$idno_original))
 table(umk$`_d`, umk$fail, exclude=NULL)
 #table(umk$`_d`, umk$failure, exclude=NULL) #failure var removed
 
-#no. of deaths which had va
+#no. of deaths which had va (main dataset)
 table(umk$fail, umk$hadva, exclude=NULL)
 #2572+13400=15972
 #2572 didn't have va
 #13400 had va
-
 
 ####checking cases that failed (failure==1)####
 head(umk[umk$failure==1 & !is.na(umk$failure),])
@@ -129,6 +128,9 @@ case61051 <- umk[umk$idno_original==61051,]
 mini_umk <- umk[c(1:1000),]
 by(mini_umk$failure,mini_umk$idno_original,function(x){sum(x,na.rm = T)})
 by(mini_umk$fail,mini_umk$idno_original,function(x){sum(x)})
+
+####checking if there are more than 1 fail in each####
+sum(c(by(umk$fail,umk$idno_original,function(x){sum(x)}))>1, na.rm = T)
 
 ####cases that failed but didn't have VA####
 head(umk[umk$failure==1 & !is.na(umk$failure) & umk$hadva==0,])
