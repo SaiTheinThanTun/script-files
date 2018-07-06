@@ -1,101 +1,19 @@
 #summer project
+#essential info to put in report
 
-#library(foreign)
 library(Rcpp)
 library("readstata13")
 library("Hmisc")
 
 setwd("~/OneDrive/Summer Project/data/")
 
-#Read stata data file
-#umk <- read.dta13("alpha_uMkhanyakude-170601.dta")
-#saveRDS(umk,"umk.RDS")
-umk <- readRDS("umk.RDS")
+#Read lite data file
+liteumk <- readRDS("liteumk.RDS")
 
-####CodeBook for main####
-if(FALSE){
-# #variable name
-# names.umk <- names(umk)
-# #variable label
-# lab.umk <- varlabel(umk)
-# #variable type 
-# type.umk <- sapply(umk, class)
-# #variable label values
-# labval.umk <- get.label.tables(umk)
-# labval.umk <- sapply(lapply(labval.umk,names),function(x) {paste(x,collapse = ", ")})
-# codebk <- cbind(names.umk, lab.umk, type.umk, labval.umk)
-# #head(codebk)
-# #dim(codebk)
-# #write.csv(codebk,"codebook_uMk_R.csv")
-}
-
-#subsetting only important variables
-selectedVar <- read.csv('selected_var.csv')
-
-####lite version of main dataset####
-liteumk <- umk[,names(umk) %in% selectedVar$name]
-#saveRDS(liteumk,"liteumk.RDS")
-
-
-###exploratory####
 #InSilicoVA
-isv <- read.csv("InSilicoVA outputs - uMkhanyakude.csv")
-#names(isv)
-isvID <- isv[,1]
-isv <- isv[,-1]
-isvCOD <- names(isv)
-COD <- NA
-for(i in 1:nrow(isv)){
-  COD[i] <- isvCOD[which.max(isv[i,])]
-}
-CODdataset <- cbind(isvID,COD)
-#saveRDS(CODdataset,"CODdataset.RDS")
-
-####another way of getting InSilicoVA data####
-if(FALSE){
-# isvlimited <- isv[,c(42:52)] #42:52 where injury CoDs are
-# describe(isvlimited)
-# sum(isvlimited) 
-# dim(isvlimited)
-# 
-# injury <- sapply(isvlimited, sum)
-# names(injury) <- names(isvlimited)
-# 
-# par(las=2)
-# barplot(injury)
-# par(las=0)
-# 
-# hist(injury)
-# #another way: but not right: hist(isvlimited[,1])
-# 
-# ####are their id unique?####
-# sum(duplicated(isv[,1]))
-# 
-# ####are the code with injuary most probable?####
-# 
-# 
-# #recombining with ID
-# isv2 <- cbind(isv[,1],isvlimited) #10171 rows
-# 
-# ####are the ID with injury reported unique?####
-# isv2.result <- isv2[rowSums(isv2[,c(2:12)])>0,] #953 rows
-# sum(duplicated(isv2.result[,1])) #all unique
-# 
-# ####does any participant have multiple type of injury data? eg. having both traffic accident and assult####
-# isv2.result[rowSums(isv2.result[,c(2:12)])>1,] #no
-# 
-# ####are all IDs from InSilicoVA data in the main data?####
-# sum((isv2.result[,1] %in% umk$idno_original)) #yes, all 953 are in 
-}
+CODdataset <- readRDS("CODdataset.RDS")
 
 ####consistency checks####
-####if death occurs, "hadva" variable will be filled####
-table(liteumk$hadva, liteumk$failure, exclude = NULL)
-sum(liteumk$hadva, na.rm=T)
-sum(liteumk$fail, na.rm=T)
-#can't be checked as hadva has 1 for all episodes of each case 
-#whereas fail occurs at most 1 per person
-#test <- liteumk[liteumk$hadva==1 & is.na(liteumk$failure),]
 
 ####2 FAIL variables####
 table(liteumk$fail, liteumk$failure, exclude=NULL)

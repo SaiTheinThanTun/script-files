@@ -3,7 +3,9 @@ clear
 cd "/Users/sai/OneDrive/Summer Project/data"
 //log using "~\stata\proj_log.log", replace
 //use "~\data\alpha_uMkhanyakude-170601.dta"
-log using "proj_log.log", replace
+
+//log using "proj_log.log", replace
+
 use "alpha_uMkhanyakude-170601.dta"
 
 //Exploratory
