@@ -4,13 +4,18 @@
 library(Rcpp)
 library("readstata13")
 library("Hmisc")
+createNewFiles <- 0 #switch to turn on/off saving new RDS files. ie. if dta file has been modified in stata
 
 setwd("~/OneDrive/Summer Project/data/")
 
 #Read stata data file
-#umk <- read.dta13("alpha_uMkhanyakude-170601.dta")
-#saveRDS(umk,"umk.RDS")
-umk <- readRDS("umk.RDS")
+if(createNewFiles){
+  umk <- read.dta13("alpha_uMkhanyakude-170601.dta")
+  saveRDS(umk,"umk.RDS")
+}
+if(!createNewFiles){
+  umk <- readRDS("umk.RDS") 
+}
 
 ####CodeBook for main####
 if(FALSE){
@@ -34,8 +39,9 @@ selectedVar <- read.csv('selected_var.csv')
 
 ####lite version of main dataset####
 liteumk <- umk[,names(umk) %in% selectedVar$name]
-#saveRDS(liteumk,"liteumk.RDS")
-
+if(createNewFiles){
+  saveRDS(liteumk,"liteumk.RDS") 
+}
 
 ###exploratory####
 #InSilicoVA
@@ -133,6 +139,7 @@ case12 <- liteumk[liteumk$idno_original==12,]
 case108 <- liteumk[liteumk$idno_original==108,]
 case13 <- liteumk[liteumk$idno_original==13,]
 case61051 <- liteumk[liteumk$idno_original==61051,]
+case185 <- liteumk[liteumk$idno_original==185,] #age>90
 
 ####checking cases that didn't fail at all####
 #sum of failure with each unique case
@@ -163,3 +170,20 @@ table(liteumk$allinfo_treat_pyramid, liteumk$hivevertreat)
 
 ####Merging 2 datasets####
 #liteumk & CODdataset
+
+####checking age####
+summary(liteumk$age)
+summary(liteumk$`_t0`) #max:122
+liteumk[liteumk$age==60,]
+over90 <- liteumk[liteumk$`_t0`>90,]
+
+####cases with VA but overlapping records####
+table(liteumk$fail,liteumk$hadva, exclude = NULL)
+tmp <- liteumk[liteumk$hadva==1 & !is.na(liteumk$hadva) & is.na(liteumk$fail),]
+tmp$idno_original %in% CODdataset[,1] #these records have no VA information either
+
+####cases with entry>exit####
+tmp <- liteumk[liteumk$entry>liteumk$exit,]
+tmp <- liteumk[liteumk$entry==liteumk$exit & !is.na(liteumk$entry) & !is.na(liteumk$exit),]
+
+
