@@ -98,7 +98,7 @@ if(FALSE){
 ####if death occurs, "hadva" variable will be filled####
 table(liteumk$hadva, liteumk$failure, exclude = NULL)
 sum(liteumk$hadva, na.rm=T)
-sum(liteumk$fail, na.rm=T)
+sum(liteumk$`_d`, na.rm=T)
 #can't be checked as hadva has 1 for all episodes of each case 
 #whereas fail occurs at most 1 per person
 #test <- liteumk[liteumk$hadva==1 & is.na(liteumk$failure),]
@@ -116,7 +116,7 @@ CODdataset[CODdataset[,1] %in% excludedDeathsID,]
 #no COD data for excluded cases. so it's ok to proceed
 
 ####fail vs HIV####
-table(liteumk$hivstatus_detail, liteumk$fail, exclude=NULL)
+table(liteumk$hivstatus_detail, liteumk$`_d`, exclude=NULL)
 
 ####no. of participants####
 #114980
@@ -125,17 +125,20 @@ length(unique(liteumk$idno_original))
 #no. of deaths: 15972
 table(liteumk$`_d`, liteumk$fail, exclude=NULL)
 #table(liteumk$`_d`, liteumk$failure, exclude=NULL) #failure var removed
+#Because of this resplitting: ‘fail’ variable is now useless as they have been further multiplicated 
+#by the split ie. some may have multiple 1 on the ‘fail’ variable
+
 
 #no. of deaths which had va (main dataset)
-table(liteumk$fail, liteumk$hadva, exclude=NULL)
+table(liteumk$`_d`, liteumk$hadva, exclude=NULL)
 #2572+13400=15972
 #2572 didn't have va
 #13400 had va
 
 ####checking cases that failed (failure==1)####
 head(liteumk[liteumk$failure==1 & !is.na(liteumk$failure),])
-case15 <- liteumk[liteumk$idno_original==15,]
-case12 <- liteumk[liteumk$idno_original==12,]
+case17 <- liteumk[liteumk$idno_original==17,] #last_neg_date and frst_pos_date present
+case12 <- liteumk[liteumk$idno_original==12,] #age check for transtition to above 60
 case108 <- liteumk[liteumk$idno_original==108,]
 case13 <- liteumk[liteumk$idno_original==13,]
 case61051 <- liteumk[liteumk$idno_original==61051,]
@@ -148,7 +151,7 @@ by(mini_liteumk$failure,mini_liteumk$idno_original,function(x){sum(x,na.rm = T)}
 by(mini_liteumk$fail,mini_liteumk$idno_original,function(x){sum(x)})
 
 ####checking if there are more than 1 fail in each####
-sum(c(by(liteumk$fail,liteumk$idno_original,function(x){sum(x)}))>1, na.rm = T)
+sum(c(by(liteumk$`_d`,liteumk$idno_original,function(x){sum(x)}))>1, na.rm = T)
 
 ####cases that failed but didn't have VA####
 head(liteumk[liteumk$failure==1 & !is.na(liteumk$failure) & liteumk$hadva==0,])
@@ -178,8 +181,8 @@ liteumk[liteumk$age==60,]
 over90 <- liteumk[liteumk$`_t0`>90,]
 
 ####cases with VA but overlapping records####
-table(liteumk$fail,liteumk$hadva, exclude = NULL)
-tmp <- liteumk[liteumk$hadva==1 & !is.na(liteumk$hadva) & is.na(liteumk$fail),]
+table(liteumk$`_d`,liteumk$hadva, exclude = NULL)
+tmp <- liteumk[liteumk$hadva==1 & !is.na(liteumk$hadva) & is.na(liteumk$`_d`),]
 tmp$idno_original %in% CODdataset[,1] #these records have no VA information either
 
 ####cases with entry>exit####
