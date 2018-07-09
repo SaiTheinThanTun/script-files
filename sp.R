@@ -151,10 +151,15 @@ by(mini_liteumk$failure,mini_liteumk$idno_original,function(x){sum(x,na.rm = T)}
 by(mini_liteumk$fail,mini_liteumk$idno_original,function(x){sum(x)})
 
 ####checking if there are more than 1 fail in each####
-sum(c(by(liteumk$`_d`,liteumk$idno_original,function(x){sum(x)}))>1, na.rm = T)
+sum(c(by(liteumk$`_d`,liteumk$idno_original,function(x){sum(x)}))>1, na.rm = T) #none
 
 ####cases that failed but didn't have VA####
-head(liteumk[liteumk$failure==1 & !is.na(liteumk$failure) & liteumk$hadva==0,])
+#head(liteumk[liteumk$failure==1 & !is.na(liteumk$failure) & liteumk$hadva==0,])
+dim(liteumk[which(liteumk$`_d`==1 & liteumk$hadva==0),])
+#2572 died but didn't have VA 
+tmp <- liteumk[which((liteumk$`_d`==1) & (liteumk$hadva==0)),]
+#0 are duplicated
+sum(duplicated(tmp$idno_original))
 
 ####idno vs idno_original#####
 #they are unique in their own ways :)
@@ -170,15 +175,14 @@ table(liteumk$allinfo_treat_pyramid, liteumk$hivevertreat)
 ####battle of 2 sexes####
 #table(liteumk$sex, liteumk$male, exclude=NULL) #correct
 
-
-####Merging 2 datasets####
-#liteumk & CODdataset
-
 ####checking age####
 summary(liteumk$age)
 summary(liteumk$`_t0`) #max:122
 liteumk[liteumk$age==60,]
 over90 <- liteumk[liteumk$`_t0`>90,]
+centennials <- liteumk[liteumk$`_t0`>100,]
+length(unique(centennials$idno_original))
+#write.csv(centennials,'centennials.csv')
 
 ####cases with VA but overlapping records####
 table(liteumk$`_d`,liteumk$hadva, exclude = NULL)
@@ -189,4 +193,21 @@ tmp$idno_original %in% CODdataset[,1] #these records have no VA information eith
 tmp <- liteumk[liteumk$entry>liteumk$exit,]
 tmp <- liteumk[liteumk$entry==liteumk$exit & !is.na(liteumk$entry) & !is.na(liteumk$exit),]
 
+####what does it mean by HIV status NA####
+tmp <- liteumk[which(is.na(liteumk$hivstatus_broad)),]
+sum(is.na(tmp$last_neg_date))
 
+tmp2 <- liteumk[which(!is.na(liteumk$hivstatus_broad)),]
+sum(is.na(tmp2$last_neg_date))
+
+hivstatus <- table(liteumk$hivstatus_detail,liteumk$hivstatus_broad,  exclude=NULL)
+hivstatus2 <- table(liteumk$allinfo_treat_pyramid,liteumk$hivstatus_broad,  exclude=NULL)
+#write.csv(hivstatus,'hivstatus.csv')
+#write.csv(hivstatus2,'hivstatus2.csv')
+posneg <- liteumk[which(liteumk$hivstatus_detai=='Negative' & liteumk$hivstatus_broad=='Positive'),]
+
+table(liteumk$allinfo_treat_pyramid,liteumk$hivstatus_broad,  exclude=NULL)
+
+####Merging 2 datasets####
+#liteumk & CODdataset
+#look into 'sp_essential.R' file for this and onwards analysis
