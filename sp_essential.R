@@ -50,7 +50,8 @@ liteumk <- liteumk[which(!is.na(liteumk$`_d`)),] #remove missing from `_d` [alre
 length(unique(liteumk[which(is.na(liteumk$`_d`)),]$idno_original)) #2034 cases only instead of 2037
 #the discrepancy in # is because some cases have records with NA in `_d` (ie. same entry & exit date)
 
-####Left censoring####
+####Left censoring for 2007 when HIV testing is done for all adults (15+)####
+liteumk <- liteumk[which((liteumk$entry>='2007-01-01')),]
 
 
 #issue with 'residence'
@@ -69,12 +70,12 @@ liteumk <- cbind(liteumk, residence2)
 colnames(CODdataset)[1] <- "idno_original" #change to match names
 CODdataset <- as.data.frame(CODdataset)
 dim(CODdataset) #10171 x2
-dim(liteumk) #2223241 x37
+dim(liteumk) #1271610 x37
 
 dat <- merge(liteumk,CODdataset, by="idno_original", all.x = TRUE)
 
-dim(dat) #2223241 x38
-sum(!is.na(dat$COD)) #147293
+dim(dat) #1271610 x38
+sum(!is.na(dat$COD)) #40315
 
 #further cleaning done here
 #the aim is to describe only to describe the final (FINAL) dataset
@@ -88,7 +89,7 @@ dat <- dat[order(dat$entry, decreasing = F),] #first record
 datL <- dat[!duplicated(dat$idno_original),]
 
 ####Descriptive statistics of the last records####
-varDes <- c('sex','residence2','hadva','failure','agegrp',
+varDes <- c('sex','residence','residence2','hadva','failure','agegrp',
             'hivstatus_detail','hivstatus_broad','allinfo_treat_pyramid',
             'hivtreat','hivevertreat','preg_at_art_start',
             'art_available','art_avail_cat', 'COD')
@@ -97,7 +98,7 @@ varDes <- c('sex','residence2','hadva','failure','agegrp',
 des <- list()
 
 for(i in 1:length(varDes)){
-  des[[i]] <- table(datL[,which(colnames(dat)==varDes[i])], exclude = NULL)
+  des[[i]] <- table(datL[,which(colnames(datL)==varDes[i])], exclude = NULL)
 }
 names(des) <- varDes
 
@@ -107,9 +108,13 @@ by(liteumk$age,liteumk$agegrp,summary) #all age groups are consistent
 by(liteumk$age,liteumk$agegrp,function(x){sum(is.na(x))})
 
 #residence variable doesn't have data on all episodes
-sum(c(by(liteumk$residence,liteumk$idno_original,function(x){sum(is.na(x))}))>1, na.rm=T) #?
-tmp <- datL[which(is.na(datL$residence)),]
-tmp2 <- dat[dat$idno_original %in% tmp$idno_original,]
+sum(c(by(dat$residence,liteumk$idno_original,function(x){sum(is.na(x))}))>=1, na.rm=T) 
+#cases with at least 1 missing residence 54855, not 48725
+sum(c(by(dat$residence2,dat$idno_original,function(x){sum(is.na(x))}))>=1, na.rm=T)
+sum(c(by(datL$residence2,datL$idno_original,function(x){sum(is.na(x))}))>=1, na.rm=T)
+#residence2: 16017, not 14748
+#tmp <- datL[which(is.na(datL$residence)),]
+#tmp2 <- dat[dat$idno_original %in% tmp$idno_original,]
 
 #do they change their residence during the study period??
 # res_umk <- liteumk[!is.na(liteumk$residence),] #removed na!
