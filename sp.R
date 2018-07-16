@@ -39,6 +39,7 @@ selectedVar <- read.csv('selected_var.csv')
 
 ####lite version of main dataset####
 liteumk <- umk[,names(umk) %in% selectedVar$name]
+#will loose all the structure of stata data file
 if(createNewFiles){
   saveRDS(liteumk,"liteumk.RDS") 
 }

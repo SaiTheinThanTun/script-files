@@ -113,6 +113,14 @@ sum(c(by(dat$residence,liteumk$idno_original,function(x){sum(is.na(x))}))>=1, na
 sum(c(by(dat$residence2,dat$idno_original,function(x){sum(is.na(x))}))>=1, na.rm=T)
 sum(c(by(datL$residence2,datL$idno_original,function(x){sum(is.na(x))}))>=1, na.rm=T)
 #residence2: 16017, not 14748
+
+#checking residence and residence2
+# > sum(c(6317, 18997, 35766, 27613))
+# [1] 88693
+# > sum(c(7621, 22863, 42192, 16017 ))
+# [1] 88693
+
+#removing missing values #obsolete now
 #tmp <- datL[which(is.na(datL$residence)),]
 #tmp2 <- dat[dat$idno_original %in% tmp$idno_original,]
 
