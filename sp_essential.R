@@ -7,7 +7,9 @@ library(Rcpp)
 library("readstata13")
 library("Hmisc")
 library(plyr)
+library(dplyr)
 library(survival)
+library(survminer)
 ####function to extract a record####
 reveal <- function(x){
   View(liteumk[liteumk$idno_original==x,])
@@ -90,13 +92,13 @@ if(FALSE){
 #liteumk & CODdataset
 colnames(CODdataset)[1] <- "idno_original" #change to match names
 CODdataset <- as.data.frame(CODdataset)
-dim(CODdataset) #10171 x2
+dim(CODdataset) #12705 x2 #10171 x2
 dim(liteumk) #1271372 x36
 
 dat <- merge(liteumk,CODdataset, by="idno_original", all.x = TRUE)
 
 dim(dat) #1271372 x37
-sum(!is.na(dat$COD)) #40185
+sum(!is.na(dat$COD)) #58222 #40185
 
 #no. of deaths
 dim(dat[dat$`_d`==1,]) #7566 deaths
@@ -105,7 +107,7 @@ dim(dat[dat$`_d`==1,]) #7566 deaths
 #sum(c(by(dat$`_d`, dat$idno_original, function(x){sum(x)>1}))) #checking if death in a person is recorded twice, 0
 
 #no. of deaths which had VA
-dim(dat[dat$`_d`==1 & !is.na(dat$COD),]) #4530
+dim(dat[dat$`_d`==1 & !is.na(dat$COD),]) #6222 #4530
 
 #further cleaning done here
 #the aim is to describe only to describe the final (FINAL) dataset
@@ -144,7 +146,14 @@ sv <- survfit(Surv(time=`_t0`, time2 = `_t`, event = `_d`) ~ hivstatus_broad, da
 sv
 summary(sv)
 summary(sv, times = c(20, 30, 40))
-pyears()
+py <- pyears(Surv(time=`_t0`, time2 = `_t`, event = `_d`) ~ 1, data=dat)
+py_hiv <- pyears(Surv(time=`_t0`, time2 = `_t`, event = `_d`) ~ hivstatus_broad, data=dat)
+
+svcox <- coxph(Surv(time=`_t0`, time2 = `_t`, event = `_d`) ~ hivstatus_broad, data=dat) #errors
+svcoxx <- coxph(Surv(time=`_t0`, time2 = `_t`, event = `_d`) ~ hivstatus_broad+sex, data=dat) #errors
+ggsurvplot(svcox)
+survdiff(Surv(time=`_t0`, time2 = `_t`, event = `_d`) ~ hivstatus_broad, data=dat)
+
 plot(sv, conf.int=FALSE, mark.time=FALSE, col=1:3) #by HIV status
 legend('topright',legend = c('neg','pos','unk'), col=1:3, lty=1)
 
