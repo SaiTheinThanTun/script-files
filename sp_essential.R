@@ -10,6 +10,7 @@ library(plyr)
 library(dplyr)
 library(survival)
 library(survminer)
+library(Epi)
 ####function to extract a record####
 reveal <- function(x){
   View(liteumk[liteumk$idno_original==x,])
@@ -52,13 +53,15 @@ table(liteumk$`_d`, liteumk$hadva, exclude=NULL)
 
 #datacleaning
 liteumk <- liteumk[which(!is.na(liteumk$`_d`)),] #remove missing from `_d` [already described in report]
+#additional cases with same entry and exit dates found out later [on date: 20180719] However, see below
+#liteumk <- liteumk[which(liteumk$entry!=liteumk$exit),] #this is an artefact of spliting by birthday/positive date
 length(unique(liteumk[which(is.na(liteumk$`_d`)),]$idno_original)) #2034 cases only instead of 2037
 #the discrepancy in # is because some cases have records with NA in `_d` (ie. same entry & exit date)
 
 #cases after removal of missing outcomes
 length(unique(liteumk$idno_original))
 
-####Left censoring for 2007 when HIV testing is done for all adults (15+)####
+####Left censoring (change terms) for 2007 when HIV testing is done for all adults (15+)####
 if(lfc){
   liteumk <- liteumk[which((liteumk$entry>='2007-01-01')),] 
 }
@@ -66,7 +69,7 @@ if(lfc){
 #cases after left censoring
 length(unique(liteumk$idno_original))
 
-####Right censoring for records with age>100####
+####Right censoring (change terms) for records with age>100####
 if(rtc){
   liteumk <- liteumk[which((liteumk$age<=100)),] 
 }
@@ -140,14 +143,38 @@ names(des) <- varDes
 dat$hivstatus_broad[is.na(dat$hivstatus_broad)] <- 'Unknown'
 
 ####Survival Analysis####
+lx <- Lexis(entry = list(per=cal.yr(entry)), exit = list(per=cal.yr(exit)+.000001), id=idno_original, exit.status=`_d`, data=dat)
+#saveRDS(lx,'lexisData20180719.RDS')
+#lx <- readRDS('lexisData20180719.RDS')
+#+.000001 was added in exit year in order to overcome artefact of having 
+#same exit and entry date from splitting at first positive dates, and birthdates
+summary(lx)
+summary(lx, by='hivstatus_broad', Rates = T, scale = 1000)
+
+#print(summary(lx, by='hivstatus_broad', Rates = T), digits=4)
+
+du <- cal.yr(dat$exit)-cal.yr(dat$entry)
+sum(du==0) #4486
+
+samedates <- dat[dat$exit==dat$entry,]
+samedates <- dat[which(du==0),]
+View(samedates)
+length(unique(samedates$idno_original)) #1525
+sum(!is.na(samedates$COD)) #of which 372 has CoD
+
 #plot(survfit(Surv(`_t0`, `_t`, `_d`) ~ 1, data=dat), conf.int=FALSE, mark.time=FALSE) #no comparison
 #sv <- with(dat,Surv(`_t0`, `_t`, `_d`))
 sv <- survfit(Surv(time=`_t0`, time2 = `_t`, event = `_d`) ~ hivstatus_broad, data=dat) #errors
 sv
 summary(sv)
 summary(sv, times = c(20, 30, 40))
-py <- pyears(Surv(time=`_t0`, time2 = `_t`, event = `_d`) ~ 1, data=dat)
-py_hiv <- pyears(Surv(time=`_t0`, time2 = `_t`, event = `_d`) ~ hivstatus_broad, data=dat)
+
+if(FALSE){
+  #this method uses each line as a single case, which is not true
+  py <- pyears(Surv(time=`_t0`, time2 = `_t`, event = `_d`) ~ 1, data=dat)
+  py_hiv <- pyears(Surv(time=`_t0`, time2 = `_t`, event = `_d`) ~ hivstatus_broad, data=dat)
+  
+}
 
 svcox <- coxph(Surv(time=`_t0`, time2 = `_t`, event = `_d`) ~ hivstatus_broad, data=dat) #errors
 svcoxx <- coxph(Surv(time=`_t0`, time2 = `_t`, event = `_d`) ~ hivstatus_broad+sex, data=dat) #errors
