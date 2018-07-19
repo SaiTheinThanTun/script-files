@@ -1,10 +1,13 @@
 #summer project
 #essential info to put in report
+lfc <- 1 #left censoring at '2007-01-01'
+rtc <- 1 #right censoring for age above 100
 
 library(Rcpp)
 library("readstata13")
 library("Hmisc")
 library(plyr)
+library(survival)
 ####function to extract a record####
 reveal <- function(x){
   View(liteumk[liteumk$idno_original==x,])
@@ -50,16 +53,34 @@ liteumk <- liteumk[which(!is.na(liteumk$`_d`)),] #remove missing from `_d` [alre
 length(unique(liteumk[which(is.na(liteumk$`_d`)),]$idno_original)) #2034 cases only instead of 2037
 #the discrepancy in # is because some cases have records with NA in `_d` (ie. same entry & exit date)
 
+#cases after removal of missing outcomes
+length(unique(liteumk$idno_original))
+
 ####Left censoring for 2007 when HIV testing is done for all adults (15+)####
-liteumk <- liteumk[which((liteumk$entry>='2007-01-01')),]
+if(lfc){
+  liteumk <- liteumk[which((liteumk$entry>='2007-01-01')),] 
+}
 
+#cases after left censoring
+length(unique(liteumk$idno_original))
 
-#issue with 'residence'
-mostFreqRes <- by(liteumk$residence,liteumk$idno_original,function(x){tableR(x)})
-freq.id <- table(liteumk$idno_original)
+####Right censoring for records with age>100####
+if(rtc){
+  liteumk <- liteumk[which((liteumk$age<=100)),] 
+}
 
-residence2 <- rep(mostFreqRes, freq.id)
-liteumk <- cbind(liteumk, residence2)
+#cases after right censoring
+length(unique(liteumk$idno_original))
+
+####issue with 'residence'####
+if(FALSE){
+  mostFreqRes <- by(liteumk$residence,liteumk$idno_original,function(x){tableR(x)})
+  freq.id <- table(liteumk$idno_original)
+  
+  residence2 <- rep(mostFreqRes, freq.id)
+  liteumk <- cbind(liteumk, residence2)
+}
+
 #tmp5 <- liteumk[is.na(liteumk$residence),] #testing
 # reveal(13)
 # reveal(14)
@@ -70,12 +91,21 @@ liteumk <- cbind(liteumk, residence2)
 colnames(CODdataset)[1] <- "idno_original" #change to match names
 CODdataset <- as.data.frame(CODdataset)
 dim(CODdataset) #10171 x2
-dim(liteumk) #1271610 x37
+dim(liteumk) #1271372 x36
 
 dat <- merge(liteumk,CODdataset, by="idno_original", all.x = TRUE)
 
-dim(dat) #1271610 x38
-sum(!is.na(dat$COD)) #40315
+dim(dat) #1271372 x37
+sum(!is.na(dat$COD)) #40185
+
+#no. of deaths
+dim(dat[dat$`_d`==1,]) #7566 deaths
+#sum(c(by(dat$`_d`, dat$idno_original, function(x){sum(x)>=1}))) #same as above
+
+#sum(c(by(dat$`_d`, dat$idno_original, function(x){sum(x)>1}))) #checking if death in a person is recorded twice, 0
+
+#no. of deaths which had VA
+dim(dat[dat$`_d`==1 & !is.na(dat$COD),]) #4530
 
 #further cleaning done here
 #the aim is to describe only to describe the final (FINAL) dataset
@@ -83,13 +113,13 @@ sum(!is.na(dat$COD)) #40315
 
 #dat <- dat[which(!is.na(dat$COD)),]
 
-#subsetting the first records
-dat <- dat[order(dat$entry, decreasing = F),] #first record
+#subsetting the LAST records
+dat <- dat[order(dat$entry, decreasing = T),] #LAST record
 #dat <- dat[order(dat$exit, decreasing = T),]
 datL <- dat[!duplicated(dat$idno_original),]
 
 ####Descriptive statistics of the last records####
-varDes <- c('sex','residence','residence2','hadva','failure','agegrp',
+varDes <- c('sex','residence','hadva','failure','agegrp',
             'hivstatus_detail','hivstatus_broad','allinfo_treat_pyramid',
             'hivtreat','hivevertreat','preg_at_art_start',
             'art_available','art_avail_cat', 'COD')
@@ -102,46 +132,67 @@ for(i in 1:length(varDes)){
 }
 names(des) <- varDes
 
-#check age consistency
-#summarize(dat$age,by(dat$agegrp), max)
-by(liteumk$age,liteumk$agegrp,summary) #all age groups are consistent
-by(liteumk$age,liteumk$agegrp,function(x){sum(is.na(x))})
+#descriptives <- do.call(rbind.data.frame, des)
 
-#residence variable doesn't have data on all episodes
-sum(c(by(dat$residence,liteumk$idno_original,function(x){sum(is.na(x))}))>=1, na.rm=T) 
-#cases with at least 1 missing residence 54855, not 48725
-sum(c(by(dat$residence2,dat$idno_original,function(x){sum(is.na(x))}))>=1, na.rm=T)
-sum(c(by(datL$residence2,datL$idno_original,function(x){sum(is.na(x))}))>=1, na.rm=T)
-#residence2: 16017, not 14748
+#get hivstatus_broad missing to unknown
+dat$hivstatus_broad[is.na(dat$hivstatus_broad)] <- 'Unknown'
 
-#checking residence and residence2
-# > sum(c(6317, 18997, 35766, 27613))
-# [1] 88693
-# > sum(c(7621, 22863, 42192, 16017 ))
-# [1] 88693
+####Survival Analysis####
+#plot(survfit(Surv(`_t0`, `_t`, `_d`) ~ 1, data=dat), conf.int=FALSE, mark.time=FALSE) #no comparison
+#sv <- with(dat,Surv(`_t0`, `_t`, `_d`))
+sv <- survfit(Surv(time=`_t0`, time2 = `_t`, event = `_d`) ~ hivstatus_broad, data=dat) #errors
+sv
+summary(sv)
+summary(sv, times = c(20, 30, 40))
+pyears()
+plot(sv, conf.int=FALSE, mark.time=FALSE, col=1:3) #by HIV status
+legend('topright',legend = c('neg','pos','unk'), col=1:3, lty=1)
 
-#removing missing values #obsolete now
-#tmp <- datL[which(is.na(datL$residence)),]
-#tmp2 <- dat[dat$idno_original %in% tmp$idno_original,]
-
-#do they change their residence during the study period??
-# res_umk <- liteumk[!is.na(liteumk$residence),] #removed na!
-# sum(c(by(res_umk$residence,res_umk$idno_original,function(x){sum(length(unique(x)))}))>1, na.rm=T) #how many cases have over 1 residency change?
-# tmp <- by(res_umk$residence,res_umk$idno_original,function(x){sum(length(unique(x)))}) #is there any residency change? provides count
-# 
-# tmp2 <- res_umk[which(res_umk$idno_original %in% names(which(tmp>1))),] #subsetting residency change of over 1 time
-# by(tmp2$residence,tmp2$idno_original,function(x){sort(table(x), decreasing = T)})
-# tmp3 <- by(tmp2$residence,tmp2$idno_original,function(x){tableR(x)})
-# freq.id <- table(tmp2$idno_original)
-# 
-# residence2 <- rep(tmp3, freq.id)
-# tmp4 <- cbind(tmp2, residence2)
-# #testing
-# reveal(173676)
-# reveal(173669)
-# reveal(170856)
-# reveal(167383)
-# reveal(165117)
-# reveal(15)
-
+#Further checks before the analyses are here####
+if(FALSE){
+  #check age consistency
+  #summarize(dat$age,by(dat$agegrp), max)
+  by(liteumk$age,liteumk$agegrp,summary) #all age groups are consistent
+  by(liteumk$age,liteumk$agegrp,function(x){sum(is.na(x))})
+  
+  #residence variable doesn't have data on all episodes
+  sum(c(by(dat$residence,liteumk$idno_original,function(x){sum(is.na(x))}))>=1, na.rm=T) 
+  #cases with at least 1 missing residence 54855, not 48725
+  
+  #sum(c(by(dat$residence2,dat$idno_original,function(x){sum(is.na(x))}))>=1, na.rm=T)
+  #sum(c(by(datL$residence2,datL$idno_original,function(x){sum(is.na(x))}))>=1, na.rm=T)
+  
+  #residence2: 16017, not 14748
+  
+  #checking residence and residence2
+  # > sum(c(6317, 18997, 35766, 27613))
+  # [1] 88693
+  # > sum(c(7621, 22863, 42192, 16017 ))
+  # [1] 88693
+  
+  #removing missing values #obsolete now
+  #tmp <- datL[which(is.na(datL$residence)),]
+  #tmp2 <- dat[dat$idno_original %in% tmp$idno_original,]
+  
+  #do they change their residence during the study period??
+  # res_umk <- liteumk[!is.na(liteumk$residence),] #removed na!
+  # sum(c(by(res_umk$residence,res_umk$idno_original,function(x){sum(length(unique(x)))}))>1, na.rm=T) #how many cases have over 1 residency change?
+  # tmp <- by(res_umk$residence,res_umk$idno_original,function(x){sum(length(unique(x)))}) #is there any residency change? provides count
+  # 
+  # tmp2 <- res_umk[which(res_umk$idno_original %in% names(which(tmp>1))),] #subsetting residency change of over 1 time
+  # by(tmp2$residence,tmp2$idno_original,function(x){sort(table(x), decreasing = T)})
+  # tmp3 <- by(tmp2$residence,tmp2$idno_original,function(x){tableR(x)})
+  # freq.id <- table(tmp2$idno_original)
+  # 
+  # residence2 <- rep(tmp3, freq.id)
+  # tmp4 <- cbind(tmp2, residence2)
+  # #testing
+  # reveal(173676)
+  # reveal(173669)
+  # reveal(170856)
+  # reveal(167383)
+  # reveal(165117)
+  # reveal(15)
+  
+}
 
