@@ -47,6 +47,11 @@ if(createNewFiles){
 ###exploratory####
 #InSilicoVA
 isv <- read.csv("InSilicoVA_hiv_nophys_output_umkhanyakude.csv") #read.csv("InSilicoVA outputs - uMkhanyakude.csv")
+
+#getting the names of accidents
+accidentNames <- names(isv)[42:52]
+saveRDS(accidentNames, 'accidentNames.RDS')
+
 #names(isv)
 isvID <- isv[,1]
 isv <- isv[,-1]

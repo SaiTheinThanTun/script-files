@@ -6,7 +6,92 @@ cd "/Users/sai/OneDrive/Summer Project/data"
 
 //log using "proj_log.log", replace
 
-use "alpha_uMkhanyakude-170601.dta"
+//use "alpha_uMkhanyakude-170601.dta" //2nd original version
+
+* new hivstat variable based on 5 years post-negative follow up time.
+/*
+gen hivstale5y = hivstatus_broad
+replace hivstale5y=3 if hivstatus_detail == 4  //Post Negative < year
+replace hivstale5y=1 if hivstale5y==3 &(hivstatus_detail==4 | hivstatus_detail ==8) & exit <= last_neg_date + 365.25*5 & last_neg_date !=.
+
+gen neg_yr= (exit-last_neg_date)/365.25
+gen negAbove5=1 if neg_yr>5
+replace negAbove5=0 if negAbove5==.
+
+save "alpha_uMkhanyakude-neg5.dta", replace
+*/
+
+use "alpha_uMkhanyakude-neg5.dta" //3rd version
+
+//to add to new version of dataset
+label value hivstale5y hivstatus_broad
+drop if _d==. //this is also done in R
+
+// issue with hivstatus
+//keep idno_original last_neg_date frst_pos_date exit entry hivstatus_detail hivstatus_broad agegrp sex //original
+keep idno_original last_neg_date frst_pos_date exit entry hivstatus_detail hivstatus_broad agegrp sex hivstale5y
+
+
+//to add to new version of dataset
+//positive status
+browse if hivstale5y==. & frst_pos_date!=. & (exit-frst_pos_date>0)
+
+//negative/unknown status
+browse if hivstale5y==. & frst_pos_date==. //32333 records
+ta negAbove5 hivstale5y, mi
+replace hivstale5y=1 if neg_yr <= 5 & neg_yr >0 & hivstale5y==. & frst_pos_date==.
+replace hivstale5y=3 if neg_yr > 5 & hivstale5y==. & frst_pos_date==.
+ta negAbove5 hivstale5y, mi
+
+//seroconverters
+tab hivstale5y if hivstatus_detail== 7 //seroconverters
+gen seroDur = (frst_pos_date - last_neg_date)/365.25
+replace hivstale5y = 1 if hivstatus_detail==7 & (neg_yr <= seroDur/2)
+replace hivstale5y = 2 if hivstatus_detail==7 & (neg_yr > seroDur/2)
+tab hivstatus_broad hivstale5y
+browse if hivstatus_detail== 7
+ta negAbove5 hivstale5y, mi
+
+gen seroDur2 = 1 if (neg_yr < seroDur/2)
+gen seroDur2 = seroDur/2
+gen seroDur3 = 1 if (neg_yr > seroDur/2)
+display(.2258 <= .3696)
+
+
+gen neg_yr= (exit-last_neg_date)/365.25
+//drop if neg_yr<0
+//drop if last_neg_date==.
+gen negAbove5=1 if neg_yr>5
+replace negAbove5=0 if negAbove5==.
+//summ negAbove5
+//ta negAbove5 hivstatus_broad, mi //original
+ta negAbove5 hivstale5y, mi
+ta hivstatus_broad hivstale5y
+
+browse if hivstale5y!=hivstatus_broad
+
+gen negAbove1=1 if neg_yr>1
+replace negAbove1=0 if negAbove1==.
+ta negAbove1 hivstatus_broad, mi
+
+browse if neg_yr<1 & hivstatus_broad==3 //seroconverter
+
+browse if hivstatus_detail==7 & hivstatus_broad==1 //seroconverter negative
+
+browse if neg_yr==1 //19131
+
+browse if neg_yr==2 //1452
+
+browse if neg_yr==3 //790
+
+browse if neg_yr==4 //40
+
+browse if neg_yr==5 // 14
+
+browse if neg_yr==6 //11, doesn't really happen
+
+browse if idno_original==236
+
 
 //format last_neg_date frst_pos_date %td
 
