@@ -6,63 +6,56 @@ cd "/Users/sai/OneDrive/Summer Project/data"
 
 //log using "proj_log.log", replace
 
-//use "alpha_uMkhanyakude-170601.dta" //2nd original version
+use "alpha_uMkhanyakude-170601.dta" //2nd original version
 
 * new hivstat variable based on 5 years post-negative follow up time.
-/*
+
 gen hivstale5y = hivstatus_broad
 replace hivstale5y=3 if hivstatus_detail == 4  //Post Negative < year
 replace hivstale5y=1 if hivstale5y==3 &(hivstatus_detail==4 | hivstatus_detail ==8) & exit <= last_neg_date + 365.25*5 & last_neg_date !=.
 
 gen neg_yr= (exit-last_neg_date)/365.25
-gen negAbove5=1 if neg_yr>5
+gen negAbove5=1 if neg_yr>5 //for checking
 replace negAbove5=0 if negAbove5==.
 
-save "alpha_uMkhanyakude-neg5.dta", replace
-*/
-
-use "alpha_uMkhanyakude-neg5.dta" //3rd version
-
-//to add to new version of dataset
 label value hivstale5y hivstatus_broad
 drop if _d==. //this is also done in R
 
-// issue with hivstatus
-//keep idno_original last_neg_date frst_pos_date exit entry hivstatus_detail hivstatus_broad agegrp sex //original
-keep idno_original last_neg_date frst_pos_date exit entry hivstatus_detail hivstatus_broad agegrp sex hivstale5y
-
-
-//to add to new version of dataset
 //positive status
-browse if hivstale5y==. & frst_pos_date!=. & (exit-frst_pos_date>0)
+//browse if hivstale5y==. & frst_pos_date!=. & (exit-frst_pos_date>0) //should be zero record
 
 //negative/unknown status
-browse if hivstale5y==. & frst_pos_date==. //32333 records
+//browse if hivstale5y==. & frst_pos_date==. //32333 records
 ta negAbove5 hivstale5y, mi
 replace hivstale5y=1 if neg_yr <= 5 & neg_yr >0 & hivstale5y==. & frst_pos_date==.
 replace hivstale5y=3 if neg_yr > 5 & hivstale5y==. & frst_pos_date==.
 ta negAbove5 hivstale5y, mi
 
 //seroconverters
-tab hivstale5y if hivstatus_detail== 7 //seroconverters
+//tab hivstale5y if hivstatus_detail== 7 //seroconverters
 gen seroDur = (frst_pos_date - last_neg_date)/365.25
 replace hivstale5y = 1 if hivstatus_detail==7 & (neg_yr <= seroDur/2)
 replace hivstale5y = 2 if hivstatus_detail==7 & (neg_yr > seroDur/2)
-tab hivstatus_broad hivstale5y
-browse if hivstatus_detail== 7
-ta negAbove5 hivstale5y, mi
+//tab hivstatus_broad hivstale5y
+//browse if hivstatus_detail== 7
+//ta negAbove5 hivstale5y, mi
 
-gen seroDur2 = 1 if (neg_yr < seroDur/2)
-gen seroDur2 = seroDur/2
-gen seroDur3 = 1 if (neg_yr > seroDur/2)
-display(.2258 <= .3696)
+save "alpha_uMkhanyakude-neg5.dta", replace
 
 
-gen neg_yr= (exit-last_neg_date)/365.25
+//use "alpha_uMkhanyakude-neg5.dta" //3rd version
+
+
+// issue with hivstatus
+//keep idno_original last_neg_date frst_pos_date exit entry hivstatus_detail hivstatus_broad agegrp sex //original
+keep idno_original last_neg_date frst_pos_date exit entry hivstatus_detail hivstatus_broad agegrp sex hivstale5y
+
+
+//gen neg_yr= (exit-last_neg_date)/365.25
 //drop if neg_yr<0
 //drop if last_neg_date==.
-gen negAbove5=1 if neg_yr>5
-replace negAbove5=0 if negAbove5==.
+//gen negAbove5=1 if neg_yr>5
+//replace negAbove5=0 if negAbove5==.
 //summ negAbove5
 //ta negAbove5 hivstatus_broad, mi //original
 ta negAbove5 hivstale5y, mi
