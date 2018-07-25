@@ -157,14 +157,16 @@ table(dat$fail2, exclude = NULL) #1270599non-case ?giving 773 deaths from accide
 #table(dat$negAbove5,dat$hivstatus_broad,exclude = NULL)
 table(dat$negAbove5,dat$hivstale5y,exclude = NULL)
 #dat$negAbove52 <- dat$neg_yr>5 #dat$neg_yr>=5 #better way to come!!! edited in stata
-tmp <- dat[which((dat$negAbove5==TRUE) & (dat$hivstale5y=='Negative')),]
-View(tmp)
-length(unique(tmp$idno_original))
 
-table(dat$hivstale5y, dat$negAbove5, exclude = NULL)
+#checking negative above 5 years after last hiv negative test
+#tmp <- dat[which((dat$negAbove5==TRUE) & (dat$hivstale5y=='Negative')),]
+#View(tmp)
+#length(unique(tmp$idno_original))
 
-tmp2 <- dat[which(!is.na(dat$last_neg_date) & dat$neg_yr>0),]
-View(tmp2)
+
+#tmp2 <- dat[which(!is.na(dat$last_neg_date) & dat$neg_yr>0),]
+#View(tmp2)
+#checking HIV status
 rnames <- c('idno_original','last_neg_date','frst_pos_date','exit','entry','hivstale5y','hivstatus_detail','neg_yr','negAbove5')
 reveal2(57818, rnames) #borderline
 reveal2(144675, rnames) #case
@@ -217,83 +219,28 @@ names(dat)[names(dat)=="_t"] <- "timex"
 names(dat)[names(dat)=="_d"] <- "fail0"
 
 ####Survival Analysis####
-lx <- Lexis(entry = list(per=cal.yr(entry)), exit = list(per=cal.yr(exit)+.000001), id=idno_original, exit.status=fail0, data=dat)
-#saveRDS(lx,'lexisData20180719.RDS')
-#lx <- readRDS('lexisData20180719.RDS')
-#+.000001 was added in exit year in order to overcome artefact of having 
-#same exit and entry date from splitting at first positive dates, and birthdates
-summary(lx)
-summary(lx, by='hivstale5y', Rates = T, scale = 1000)
-#print(summary(lx, by='hivstale5y', Rates = T), digits=4)
 
-if(FALSE){
-  View(lx[lx$lex.id==67180,])
-  st <- survtab(Surv(time = lex.dur, event = lex.Xst) ~ hivstale5y, data = lx, 
-                surv.type = "surv.obs",
-                breaks = list(lex.dur = seq(15, 100, 1)))
-}
+testOClist <- c("hivstatus_broad","hivstale5y", "missingFixed", "seroconFixed", "allFixed")
+testOC <- testOClist[1]
 
+###SURVIVAL CURVE####
+sv <- survfit(Surv(time=time0, time2 = timex, event = fail0) ~ dat[,which(names(dat) %in% testOC)], data=dat)
+#sv <- survfit(Surv(time=time0, time2 = timex, event = fail0) ~ hivstale5y, data=dat) #ALL CAUSES OF DEATH
+plot(sv, conf.int=FALSE, mark.time=FALSE, col=1:3, main=paste(testOC, "all causes")) #by HIV status
+legend('topright',legend = c('neg','pos','unk'), col=1:3, lty=1)
 
-#du <- cal.yr(dat$exit)-cal.yr(dat$entry)
-#sum(du==0) #4486
-#by(du, dat$hivstale5y, sum)
-#c(97645.92,79372.85,362437.1)/365
-#c(952,2329,4285)/(c(97645.92,79372.85,362437.1)/365)
-
-#records with same entry and exit dates
-#samedates <- dat[dat$exit==dat$entry,]
-#samedates <- dat[which(du==0),]
-#View(samedates)
-#length(unique(samedates$idno_original)) #1525
-#sum(!is.na(samedates$COD)) #of which 372 has CoD
-
-#using only accident CoD
-lx2 <- Lexis(entry = list(per=cal.yr(entry)), exit = list(per=cal.yr(exit)+.000001), id=idno_original, exit.status=fail2, data=dat)
-#saveRDS(lx,'lexisData20180719.RDS')
-#lx <- readRDS('lexisData20180719.RDS')
-#+.000001 was added in exit year in order to overcome artefact of having 
-#same exit and entry date from splitting at first positive dates, and birthdates
-summary(lx2)
-summary(lx2, by='hivstale5y', Rates = T, scale = 1000)
-
-sv2 <- survfit(Surv(time=time0, time2 = timex, event = fail2) ~ hivstale5y, data=dat) #errors
-summary(sv2)
-summary(sv2, times = c(20, 30, 40))
-plot(sv2, conf.int=FALSE, mark.time=FALSE, col=1:3, ymin = .8) #by HIV status
+sv2 <- survfit(Surv(time=time0, time2 = timex, event = fail2) ~ dat[,which(names(dat) %in% testOC)], data=dat) #Deaths due to injuries alone: fail2
+#summary(sv2)
+#summary(sv2, times = c(20, 30, 40))
+plot(sv2, conf.int=FALSE, mark.time=FALSE, col=1:3, ymin = .8, main=paste(testOC, "ext. inj")) #by HIV status
 legend('bottomleft',legend = c('neg','pos','unk'), col=1:3, lty=1)
 #ggsurvplot(sv2) #takes too much time and memory
 
-#the rest# delete after a while
-#plot(survfit(Surv(time0, timex, fail0) ~ 1, data=dat), conf.int=FALSE, mark.time=FALSE) #no comparison
-#sv <- with(dat,Surv(time0, timex, fail0))
-sv <- survfit(Surv(time=time0, time2 = timex, event = fail0) ~ hivstale5y, data=dat) #errors
-sv
-summary(sv)
-summary(sv, times = c(20, 30, 40))
-
-svRes <- survfit(Surv(time=time0, time2 = timex, event = fail0) ~ residence, data=dat) #errors
-svRes
-plot(svRes, conf.int=FALSE, mark.time=FALSE, col=1:3)
-legend('bottomleft',legend = c("urban","peri-urban", "rural"), col=1:3, lty=1)
-
-
-svSex <- survfit(Surv(time=time0, time2 = timex, event = fail0) ~ sex, data=dat) #errors
-svSex
-plot(svSex, conf.int=FALSE, mark.time=FALSE, col=1:2)
-legend('bottomleft',legend = c("men","women"), col=1:2, lty=1)
-
-
-if(FALSE){
-  #this method uses each line as a single case, which is not true
-  py <- pyears(Surv(time=time0, time2 = timex, event = fail0) ~ 1, data=dat, scale = 1)
-  py_hiv <- pyears(Surv(time=time0, time2 = timex, event = fail0) ~ hivstale5y, data=dat, scale = 1)
-  
-}
-
+###COX REGRESSION####
 #basic
 #svcox <- coxph(Surv(time=time0, time2 = timex, event = fail2) ~ factor(hivstale5y), data=dat) 
 #summary(svcox)
-svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(hivstale5y), data=dat) 
+svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(dat[,which(names(dat) %in% testOC)]), data=dat) 
 summary(svcox)
 
 po_con <- c('sex','age','residence')
@@ -304,38 +251,112 @@ po_con <- c('sex','age','residence')
 #basic+res *
 #res.svcox <- coxph(Surv(time=time0, time2 = timex, event = fail2) ~ hivstale5y+residence, data=dat) 
 #summary(res.svcox)
-res.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(hivstale5y)+factor(residence), data=dat) 
+res.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(dat[,which(names(dat) %in% testOC)])+factor(residence), data=dat) 
 summary(res.svcox)
 
 #basic+sex *
 #sex.svcox <- coxph(Surv(time=time0, time2 = timex, event = fail2) ~ hivstale5y+sex, data=dat) 
 #summary(sex.svcox)
-sex.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(hivstale5y)+factor(sex), data=dat) 
+sex.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(dat[,which(names(dat) %in% testOC)])+factor(sex), data=dat) 
 summary(sex.svcox)
 
 #basic+age *?
 #age.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(hivstale5y)+factor(agegrp), data=dat) #error
-age.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(hivstale5y)+age, data=dat)
+age.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(dat[,which(names(dat) %in% testOC)])+age, data=dat)
 summary(age.svcox)
 
 #basic+age+res+sex
-ars.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(hivstale5y)+age+factor(residence)+factor(sex), data=dat) 
+ars.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(dat[,which(names(dat) %in% testOC)])+age+factor(residence)+factor(sex), data=dat) 
 summary(ars.svcox)
 
-#basic+age+res+sex
-as.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(hivstale5y)+age+factor(sex), data=dat) 
+#basic+age+sex
+as.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(dat[,which(names(dat) %in% testOC)])+age+factor(sex), data=dat) 
 summary(as.svcox)
 
-plot(svcox, conf.int=FALSE, mark.time=FALSE, col=1:3, ymin = .8) #by HIV status
-legend('bottomleft',legend = c('neg','pos','unk'), col=1:3, lty=1)
 
-svcoxid <- coxph(Surv(time=time0, time2 = timex, event = fail0) ~ hivstale5y+cluster(idno_original), data=dat) #errors
-svcoxx <- coxph(Surv(time=time0, time2 = timex, event = fail0) ~ hivstale5y+sex, data=dat) #errors
-ggsurvplot(svcox)
-survdiff(Surv(time=time0, time2 = timex, event = fail0) ~ hivstale5y, data=dat)
 
-plot(sv, conf.int=FALSE, mark.time=FALSE, col=1:3) #by HIV status
-legend('topright',legend = c('neg','pos','unk'), col=1:3, lty=1)
+
+#lexis
+if(FALSE){
+  lx <- Lexis(entry = list(per=cal.yr(entry)), exit = list(per=cal.yr(exit)+.000001), id=idno_original, exit.status=fail0, data=dat)
+  #saveRDS(lx,'lexisData20180719.RDS')
+  #lx <- readRDS('lexisData20180719.RDS')
+  #+.000001 was added in exit year in order to overcome artefact of having 
+  #same exit and entry date from splitting at first positive dates, and birthdates
+  summary(lx)
+  summary(lx, by='hivstale5y', Rates = T, scale = 1000)
+  #print(summary(lx, by='hivstale5y', Rates = T), digits=4)
+  
+  
+  if(FALSE){
+    View(lx[lx$lex.id==67180,])
+    st <- survtab(Surv(time = lex.dur, event = lex.Xst) ~ hivstale5y, data = lx, 
+                  surv.type = "surv.obs",
+                  breaks = list(lex.dur = seq(15, 100, 1)))
+  }
+  
+  
+  #du <- cal.yr(dat$exit)-cal.yr(dat$entry)
+  #sum(du==0) #4486
+  #by(du, dat$hivstale5y, sum)
+  #c(97645.92,79372.85,362437.1)/365
+  #c(952,2329,4285)/(c(97645.92,79372.85,362437.1)/365)
+  
+  #records with same entry and exit dates
+  #samedates <- dat[dat$exit==dat$entry,]
+  #samedates <- dat[which(du==0),]
+  #View(samedates)
+  #length(unique(samedates$idno_original)) #1525
+  #sum(!is.na(samedates$COD)) #of which 372 has CoD
+  
+  #using only accident CoD
+  lx2 <- Lexis(entry = list(per=cal.yr(entry)), exit = list(per=cal.yr(exit)+.000001), id=idno_original, exit.status=fail2, data=dat)
+  #saveRDS(lx,'lexisData20180719.RDS')
+  #lx <- readRDS('lexisData20180719.RDS')
+  #+.000001 was added in exit year in order to overcome artefact of having 
+  #same exit and entry date from splitting at first positive dates, and birthdates
+  summary(lx2)
+  summary(lx2, by='hivstale5y', Rates = T, scale = 1000)
+}
+
+#others
+if(FALSE){
+  #the rest# delete after a while
+  #plot(survfit(Surv(time0, timex, fail0) ~ 1, data=dat), conf.int=FALSE, mark.time=FALSE) #no comparison
+  #sv <- with(dat,Surv(time0, timex, fail0))
+  sv <- survfit(Surv(time=time0, time2 = timex, event = fail0) ~ hivstale5y, data=dat) #errors
+  sv
+  summary(sv)
+  summary(sv, times = c(20, 30, 40))
+  
+  svRes <- survfit(Surv(time=time0, time2 = timex, event = fail0) ~ residence, data=dat) #errors
+  svRes
+  plot(svRes, conf.int=FALSE, mark.time=FALSE, col=1:3)
+  legend('bottomleft',legend = c("urban","peri-urban", "rural"), col=1:3, lty=1)
+  
+  
+  svSex <- survfit(Surv(time=time0, time2 = timex, event = fail0) ~ sex, data=dat) #errors
+  svSex
+  plot(svSex, conf.int=FALSE, mark.time=FALSE, col=1:2)
+  legend('bottomleft',legend = c("men","women"), col=1:2, lty=1)
+  
+  
+  if(FALSE){
+    #this method uses each line as a single case, which is not true
+    py <- pyears(Surv(time=time0, time2 = timex, event = fail0) ~ 1, data=dat, scale = 1)
+    py_hiv <- pyears(Surv(time=time0, time2 = timex, event = fail0) ~ hivstale5y, data=dat, scale = 1)
+    
+  }
+  
+  plot(svcox, conf.int=FALSE, mark.time=FALSE, col=1:3, ymin = .8) #by HIV status, DOESN'T plot anything
+  legend('bottomleft',legend = c('neg','pos','unk'), col=1:3, lty=1)
+  
+  svcoxid <- coxph(Surv(time=time0, time2 = timex, event = fail0) ~ hivstale5y+cluster(idno_original), data=dat) #errors
+  svcoxx <- coxph(Surv(time=time0, time2 = timex, event = fail0) ~ hivstale5y+sex, data=dat) #errors
+  ggsurvplot(svcox)
+  survdiff(Surv(time=time0, time2 = timex, event = fail0) ~ hivstale5y, data=dat)
+  
+}
 
 #Further checks before the analyses are here####
 if(FALSE){
