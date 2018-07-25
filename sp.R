@@ -11,7 +11,8 @@ setwd("~/OneDrive/Summer Project/data/")
 #Read stata data file
 if(createNewFiles){
   #umk <- read.dta13("alpha_uMkhanyakude-170601.dta") #2nd original
-  umk <- read.dta13("alpha_uMkhanyakude-neg5.dta") #3rd version
+  #umk <- read.dta13("alpha_uMkhanyakude-neg5.dta") #3rd version
+  umk <- read.dta13("alpha_uMkhanyakude-v4.dta") #4th version
   saveRDS(umk,"umk.RDS")
 }
 if(!createNewFiles){

@@ -14,37 +14,62 @@ gen hivstale5y = hivstatus_broad
 replace hivstale5y=3 if hivstatus_detail == 4  //Post Negative < year
 replace hivstale5y=1 if hivstale5y==3 &(hivstatus_detail==4 | hivstatus_detail ==8) & exit <= last_neg_date + 365.25*5 & last_neg_date !=.
 
+label define hivstale5y 1 "Negative" 2 "Positive" 3 "Unknown"
+label value hivstale5y hivstale5y
+
 gen neg_yr= (exit-last_neg_date)/365.25
 gen negAbove5=0 if neg_yr<=5 //for checking ! careful b/c . is the largest value in Stata!!!!
 replace negAbove5=1 if neg_yr!=. & neg_yr>5
 
-label value hivstale5y hivstatus_broad
 drop if _d==. //this is also done in R
+gen seroDur = (frst_pos_date - last_neg_date)/365.25
 
 //positive status
 //browse if hivstale5y==. & frst_pos_date!=. & (exit-frst_pos_date>0) //should be zero record
 
-//negative/unknown status
-//browse if hivstale5y==. & frst_pos_date==. //32333 records
-ta negAbove5 hivstale5y, mi
-replace hivstale5y=1 if neg_yr <= 5 & neg_yr >0 & hivstale5y==. & frst_pos_date==. //23352
-//replace hivstale5y=3 if neg_yr > 5 & hivstale5y==. & frst_pos_date==. //8981 becareful of greater than sign
-replace hivstale5y=3 if neg_yr!=. & neg_yr > 5 & hivstale5y==. & frst_pos_date==. //8981 becareful of greater than sign
-ta negAbove5 hivstale5y, mi
+//allFixed
 
-//seroconverters
-//tab hivstale5y if hivstatus_detail== 7 //seroconverters
-gen seroDur = (frst_pos_date - last_neg_date)/365.25
-replace hivstale5y = 1 if hivstatus_detail==7 & (neg_yr <= seroDur/2)
-replace hivstale5y = 2 if hivstatus_detail==7 & (neg_yr > seroDur/2)
-//tab hivstatus_broad hivstale5y
-//browse if hivstatus_detail== 7
-//ta negAbove5 hivstale5y, mi
+gen allFixed = hivstale5y
+ta negAbove5 allFixed, mi
+replace allFixed=1 if neg_yr <= 5 & neg_yr >0 & allFixed==. & frst_pos_date==. //23352
+replace allFixed=3 if neg_yr!=. & neg_yr > 5 & allFixed==. & frst_pos_date==. //8981 becareful of greater than sign
 
-save "alpha_uMkhanyakude-neg5.dta", replace
+replace allFixed = 1 if hivstatus_detail==7 & (neg_yr <= seroDur/2)
+replace allFixed = 2 if hivstatus_detail==7 & (neg_yr > seroDur/2)
+
+label define allFixed 1 "Negative" 2 "Positive" 3 "Unknown"
+label value allFixed allFixed
+ta negAbove5 allFixed, mi
+
+
+//missingFixed
+gen missingFixed=hivstale5y
+ta negAbove5 missingFixed, mi
+replace missingFixed=1 if neg_yr <= 5 & neg_yr >0 & missingFixed==. & frst_pos_date==. //23352
+replace missingFixed=3 if neg_yr!=. & neg_yr > 5 & missingFixed==. & frst_pos_date==. //8981 becareful of greater than sign
+label value missingFixed hivstatus_broad
+
+
+label define missingFixed 1 "Negative" 2 "Positive" 3 "Unknown"
+label value missingFixed missingFixed
+ta negAbove5 missingFixed, mi
+
+
+//seroconFixed
+gen seroconFixed=hivstale5y
+replace seroconFixed = 1 if hivstatus_detail==7 & (neg_yr <= seroDur/2)
+replace seroconFixed = 2 if hivstatus_detail==7 & (neg_yr > seroDur/2)
+label value seroconFixed hivstatus_broad
+
+label define seroconFixed 1 "Negative" 2 "Positive" 3 "Unknown"
+label value seroconFixed seroconFixed
+ta negAbove5 seroconFixed, mi
+
+
+save "alpha_uMkhanyakude-v4.dta", replace //4th version 20180725
 */
 
-use "alpha_uMkhanyakude-neg5.dta" //3rd version
+use "alpha_uMkhanyakude-v4.dta" //4th version
 
 
 // issue with hivstatus
@@ -117,3 +142,21 @@ ta hivstatus_broad, missing
 recode hivstatus_broad (.=3)
 
 strate hivstatus_broad
+
+/*
+//backup
+ta negAbove5 hivstale5y, mi
+replace hivstale5y=1 if neg_yr <= 5 & neg_yr >0 & hivstale5y==. & frst_pos_date==. //23352
+//replace hivstale5y=3 if neg_yr > 5 & hivstale5y==. & frst_pos_date==. //8981 becareful of greater than sign
+replace hivstale5y=3 if neg_yr!=. & neg_yr > 5 & hivstale5y==. & frst_pos_date==. //8981 becareful of greater than sign
+ta negAbove5 hivstale5y, mi
+
+//seroconverters
+//tab hivstale5y if hivstatus_detail== 7 //seroconverters
+gen seroDur = (frst_pos_date - last_neg_date)/365.25
+replace hivstale5y = 1 if hivstatus_detail==7 & (neg_yr <= seroDur/2)
+replace hivstale5y = 2 if hivstatus_detail==7 & (neg_yr > seroDur/2)
+//tab hivstatus_broad hivstale5y
+//browse if hivstatus_detail== 7
+//ta negAbove5 hivstale5y, mi
+*/

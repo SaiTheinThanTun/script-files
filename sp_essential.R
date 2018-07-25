@@ -1,4 +1,5 @@
 #summer project
+#dataflow: sp.do -> sp.R -> sp_essential.R
 #essential info to put in report
 lfc <- 1 #left censoring at '2007-01-01'
 rtc <- 1 #right censoring for age above 100
@@ -62,10 +63,10 @@ table(liteumk$`_d`, liteumk$hadva, exclude=NULL)
 #tmp <- liteumk[which(is.na(liteumk$`_d`)),]
 
 #datacleaning
+length(unique(liteumk[which(is.na(liteumk$`_d`)),]$idno_original)) #2034 cases only instead of 2037
 liteumk <- liteumk[which(!is.na(liteumk$`_d`)),] #remove missing from `_d` [already described in report]
 #additional cases with same entry and exit dates found out later [on date: 20180719] However, see below
 #liteumk <- liteumk[which(liteumk$entry!=liteumk$exit),] #this is an artefact of spliting by birthday/positive date
-#length(unique(liteumk[which(is.na(liteumk$`_d`)),]$idno_original)) #2034 cases only instead of 2037
 #the discrepancy in # is because some cases have records with NA in `_d` (ie. same entry & exit date)
 
 #cases after removal of missing outcomes
@@ -96,9 +97,6 @@ if(FALSE){
   liteumk <- cbind(liteumk, residence2)
 }
 
-#re-factoring 'hivstale5y', v3 dataset
-liteumk$hivstale5y <- as.factor(liteumk$hivstale5y) 
-levels(liteumk$hivstale5y) <- c("Negative", "Positive" ,"Unknown")
 
 #tmp5 <- liteumk[is.na(liteumk$residence),] #testing
 # reveal(13)
@@ -110,12 +108,12 @@ levels(liteumk$hivstale5y) <- c("Negative", "Positive" ,"Unknown")
 colnames(CODdataset)[1] <- "idno_original" #change to match names
 CODdataset <- as.data.frame(CODdataset)
 dim(CODdataset) #12705 x2 #10171 x2
-dim(liteumk) #1271372 x40
+dim(liteumk) #1271372 x43
 
 dat <- merge(liteumk,CODdataset, by="idno_original", all.x = TRUE)
 
-dim(dat) #1271372 x41
-sum(!is.na(dat$COD)) #58222 #40185
+dim(dat) #1271372 x44
+sum(!is.na(dat$COD)) #58222 <- #40185
 
 #no. of deaths
 dim(dat[dat$`_d`==1,]) #7566 deaths
@@ -129,7 +127,7 @@ dim(dat[dat$`_d`==1 & !is.na(dat$COD),]) #6222 #4530 #82%
 ####Adding new fail variable 'fail2'####
 #loop, test 2 conditions (liteumk$fail==1 & liteumk$COD %in% accidentNames)
 accidentNames <- readRDS('accidentNames.RDS')
-dim(dat) #1271372      40
+dim(dat) #1271372      44
 if(FALSE){
   #THIS TAKES TOO LONG!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
   
@@ -141,7 +139,7 @@ if(FALSE){
 #another faster way of doing the above
 fail2 <- (dat$`_d`==1)*(dat$COD %in% accidentNames)
 dat <- cbind(dat,fail2)
-dim(dat) #1271372      42
+dim(dat) #1271372      45
 #sum(is.na(dat$fail2))
 table(dat$fail2, exclude = NULL) #1270599non-case ?giving 773 deaths from accidents only ?817 deaths from prev result
 
@@ -154,8 +152,21 @@ table(dat$fail2, exclude = NULL) #1270599non-case ?giving 773 deaths from accide
 #already done in stata, 3rd version of dataset
 #dat$neg_yr <- (dat$exit - dat$last_neg_date)/365.25
 #dat$negAbove5 <- dat$neg_yr>5 #dat$neg_yr>=5
-#table(dat$negAbove5,dat$hivstatus_broad,exclude = NULL)
+#labeling
+dat$hivstale5y <- as.factor(dat$hivstale5y) 
+levels(dat$hivstale5y) <- c("Negative", "Positive" ,"Unknown")
+dat$missingFixed <- as.factor(dat$missingFixed) 
+levels(dat$missingFixed) <- c("Negative", "Positive" ,"Unknown")
+dat$seroconFixed <- as.factor(dat$seroconFixed) 
+levels(dat$seroconFixed) <- c("Negative", "Positive" ,"Unknown")
+dat$allFixed <- as.factor(dat$allFixed) 
+levels(dat$allFixed) <- c("Negative", "Positive" ,"Unknown")
+
+table(dat$negAbove5,dat$hivstatus_broad,exclude = NULL)
 table(dat$negAbove5,dat$hivstale5y,exclude = NULL)
+table(dat$negAbove5,dat$missingFixed,exclude = NULL)
+table(dat$negAbove5,dat$seroconFixed,exclude = NULL)
+table(dat$negAbove5,dat$allFixed,exclude = NULL)
 #dat$negAbove52 <- dat$neg_yr>5 #dat$neg_yr>=5 #better way to come!!! edited in stata
 
 #checking negative above 5 years after last hiv negative test
@@ -167,17 +178,20 @@ table(dat$negAbove5,dat$hivstale5y,exclude = NULL)
 #tmp2 <- dat[which(!is.na(dat$last_neg_date) & dat$neg_yr>0),]
 #View(tmp2)
 #checking HIV status
-rnames <- c('idno_original','last_neg_date','frst_pos_date','exit','entry','hivstale5y','hivstatus_detail','neg_yr','negAbove5')
-reveal2(57818, rnames) #borderline
-reveal2(144675, rnames) #case
-reveal2(106727, rnames) #change to unknown after 1 year
-reveal2(16, rnames) #change to unknown after 1 year
-reveal2(17, rnames) #change to unknow on the last_neg_date
+if(FALSE){
+  rnames <- c('idno_original','last_neg_date','frst_pos_date','exit','entry','hivstale5y','hivstatus_detail','neg_yr','negAbove5')
+  reveal2(57818, rnames) #borderline
+  reveal2(144675, rnames) #case
+  reveal2(106727, rnames) #change to unknown after 1 year
+  reveal2(16, rnames) #change to unknown after 1 year
+  reveal2(17, rnames) #change to unknow on the last_neg_date
+  
+  
+  View(dat[which(dat$idno_original %in% c(240, 272, 358, 492, 1401, 21466, 21490, 153504, 153792, 154144)),]) #change in 2 years
+  View(dat[which(dat$idno_original %in% c(56, 287, 288, 359, 739, 789, 1129)),])#change in 3 years
+  View(dat[which(dat$idno_original %in% c(17, 84,  238, 278, 14922)),])#seroconverters
+}
 
-
-View(dat[which(dat$idno_original %in% c(240, 272, 358, 492, 1401, 21466, 21490, 153504, 153792, 154144)),]) #change in 2 years
-View(dat[which(dat$idno_original %in% c(56, 287, 288, 359, 739, 789, 1129)),])#change in 3 years
-View(dat[which(dat$idno_original %in% c(17, 84,  238, 278, 14922)),])#seroconverters
 
 #further cleaning done here
 #the aim is to describe only to describe the final (FINAL) dataset
