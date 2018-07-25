@@ -10,7 +10,8 @@ setwd("~/OneDrive/Summer Project/data/")
 
 #Read stata data file
 if(createNewFiles){
-  umk <- read.dta13("alpha_uMkhanyakude-170601.dta")
+  #umk <- read.dta13("alpha_uMkhanyakude-170601.dta") #2nd original
+  umk <- read.dta13("alpha_uMkhanyakude-neg5.dta") #3rd version
   saveRDS(umk,"umk.RDS")
 }
 if(!createNewFiles){
@@ -43,6 +44,7 @@ liteumk <- umk[,names(umk) %in% selectedVar$name]
 if(createNewFiles){
   saveRDS(liteumk,"liteumk.RDS") 
 }
+#end of data file saving
 
 ###exploratory####
 #InSilicoVA

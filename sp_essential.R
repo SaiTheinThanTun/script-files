@@ -44,7 +44,7 @@ CODdataset <- readRDS("CODdataset.RDS")
 
 ####consistency checks####
 ####no. of participants####
-#114980
+#114980 -> 114068
 length(unique(liteumk$idno_original))
 
 #no. of deaths: 15972
@@ -65,11 +65,11 @@ table(liteumk$`_d`, liteumk$hadva, exclude=NULL)
 liteumk <- liteumk[which(!is.na(liteumk$`_d`)),] #remove missing from `_d` [already described in report]
 #additional cases with same entry and exit dates found out later [on date: 20180719] However, see below
 #liteumk <- liteumk[which(liteumk$entry!=liteumk$exit),] #this is an artefact of spliting by birthday/positive date
-length(unique(liteumk[which(is.na(liteumk$`_d`)),]$idno_original)) #2034 cases only instead of 2037
+#length(unique(liteumk[which(is.na(liteumk$`_d`)),]$idno_original)) #2034 cases only instead of 2037
 #the discrepancy in # is because some cases have records with NA in `_d` (ie. same entry & exit date)
 
 #cases after removal of missing outcomes
-length(unique(liteumk$idno_original))
+length(unique(liteumk$idno_original)) #114068
 
 ####Left censoring (change terms) for 2007 when HIV testing is done for all adults (15+)####
 if(lfc){
@@ -96,6 +96,10 @@ if(FALSE){
   liteumk <- cbind(liteumk, residence2)
 }
 
+#re-factoring 'hivstale5y', v3 dataset
+liteumk$hivstale5y <- as.factor(liteumk$hivstale5y) 
+levels(liteumk$hivstale5y) <- c("Negative", "Positive" ,"Unknown")
+
 #tmp5 <- liteumk[is.na(liteumk$residence),] #testing
 # reveal(13)
 # reveal(14)
@@ -106,11 +110,11 @@ if(FALSE){
 colnames(CODdataset)[1] <- "idno_original" #change to match names
 CODdataset <- as.data.frame(CODdataset)
 dim(CODdataset) #12705 x2 #10171 x2
-dim(liteumk) #1271372 x36
+dim(liteumk) #1271372 x40
 
 dat <- merge(liteumk,CODdataset, by="idno_original", all.x = TRUE)
 
-dim(dat) #1271372 x37
+dim(dat) #1271372 x41
 sum(!is.na(dat$COD)) #58222 #40185
 
 #no. of deaths
@@ -120,12 +124,12 @@ dim(dat[dat$`_d`==1,]) #7566 deaths
 #sum(c(by(dat$fail0, dat$idno_original, function(x){sum(x)>1}))) #checking if death in a person is recorded twice, 0
 
 #no. of deaths which had VA
-dim(dat[dat$`_d`==1 & !is.na(dat$COD),]) #6222 #4530
+dim(dat[dat$`_d`==1 & !is.na(dat$COD),]) #6222 #4530 #82%
 
 ####Adding new fail variable 'fail2'####
 #loop, test 2 conditions (liteumk$fail==1 & liteumk$COD %in% accidentNames)
 accidentNames <- readRDS('accidentNames.RDS')
-dim(dat) #1271372      37
+dim(dat) #1271372      40
 if(FALSE){
   #THIS TAKES TOO LONG!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
   
@@ -137,9 +141,9 @@ if(FALSE){
 #another faster way of doing the above
 fail2 <- (dat$`_d`==1)*(dat$COD %in% accidentNames)
 dat <- cbind(dat,fail2)
-dim(dat) #1271372      38
+dim(dat) #1271372      42
 #sum(is.na(dat$fail2))
-table(dat$fail2, exclude = NULL) #only 817 deaths from accidents
+table(dat$fail2, exclude = NULL) #1270599non-case ?giving 773 deaths from accidents only ?817 deaths from prev result
 
 #checking 2 methods of deriving fail2
 #tmp1 <- dat[dat$fail2==1,]
@@ -147,18 +151,21 @@ table(dat$fail2, exclude = NULL) #only 817 deaths from accidents
 #identical(tmp1, tmp2) #TRUE
 
 #checking hivstatus_broad
-dat$neg_yr <- (dat$exit - dat$last_neg_date)/365.25
-dat$negAbove5 <- dat$neg_yr>=5
-table(dat$negAbove5,dat$hivstatus_broad,exclude = NULL)
-tmp <- dat[which((dat$negAbove5==TRUE) & (dat$hivstatus_broad=='Negative')),]
+#already done in stata, 3rd version of dataset
+#dat$neg_yr <- (dat$exit - dat$last_neg_date)/365.25
+#dat$negAbove5 <- dat$neg_yr>5 #dat$neg_yr>=5
+#table(dat$negAbove5,dat$hivstatus_broad,exclude = NULL)
+table(dat$negAbove5,dat$hivstale5y,exclude = NULL)
+#dat$negAbove52 <- dat$neg_yr>5 #dat$neg_yr>=5 #better way to come!!! edited in stata
+tmp <- dat[which((dat$negAbove5==TRUE) & (dat$hivstale5y=='Negative')),]
 View(tmp)
 length(unique(tmp$idno_original))
 
-table(dat$hivstatus_broad, dat$negAbove5, exclude = NULL)
+table(dat$hivstale5y, dat$negAbove5, exclude = NULL)
 
 tmp2 <- dat[which(!is.na(dat$last_neg_date) & dat$neg_yr>0),]
 View(tmp2)
-rnames <- c('idno_original','last_neg_date','frst_pos_date','exit','entry','hivstatus_broad','hivstatus_detail','neg_yr','negAbove5')
+rnames <- c('idno_original','last_neg_date','frst_pos_date','exit','entry','hivstale5y','hivstatus_detail','neg_yr','negAbove5')
 reveal2(57818, rnames) #borderline
 reveal2(144675, rnames) #case
 reveal2(106727, rnames) #change to unknown after 1 year
@@ -183,7 +190,7 @@ datL <- dat[!duplicated(dat$idno_original),]
 
 ####Descriptive statistics of the last records####
 varDes <- c('sex','residence','hadva','failure','agegrp',
-            'hivstatus_detail','hivstatus_broad','allinfo_treat_pyramid',
+            'hivstatus_detail','hivstale5y','allinfo_treat_pyramid',
             'hivtreat','hivevertreat','preg_at_art_start',
             'art_available','art_avail_cat', 'COD')
 #discarded
@@ -203,8 +210,8 @@ datL$va <- !is.na(datL$COD)
 table(datL$hadva, datL$va, exclude = NULL)
 table(datL$`_d`, datL$va, exclude = NULL) #12 are not dead but have VA!!!
 
-#get hivstatus_broad missing to unknown #recoding unknown
-#dat$hivstatus_broad[is.na(dat$hivstatus_broad)] <- 'Unknown'
+#get hivstale5y missing to unknown #recoding unknown
+#dat$hivstale5y[is.na(dat$hivstale5y)] <- 'Unknown'
 names(dat)[names(dat)=="_t0"] <- "time0"
 names(dat)[names(dat)=="_t"] <- "timex"
 names(dat)[names(dat)=="_d"] <- "fail0"
@@ -216,12 +223,12 @@ lx <- Lexis(entry = list(per=cal.yr(entry)), exit = list(per=cal.yr(exit)+.00000
 #+.000001 was added in exit year in order to overcome artefact of having 
 #same exit and entry date from splitting at first positive dates, and birthdates
 summary(lx)
-summary(lx, by='hivstatus_broad', Rates = T, scale = 1000)
-#print(summary(lx, by='hivstatus_broad', Rates = T), digits=4)
+summary(lx, by='hivstale5y', Rates = T, scale = 1000)
+#print(summary(lx, by='hivstale5y', Rates = T), digits=4)
 
 if(FALSE){
   View(lx[lx$lex.id==67180,])
-  st <- survtab(Surv(time = lex.dur, event = lex.Xst) ~ hivstatus_broad, data = lx, 
+  st <- survtab(Surv(time = lex.dur, event = lex.Xst) ~ hivstale5y, data = lx, 
                 surv.type = "surv.obs",
                 breaks = list(lex.dur = seq(15, 100, 1)))
 }
@@ -229,7 +236,7 @@ if(FALSE){
 
 #du <- cal.yr(dat$exit)-cal.yr(dat$entry)
 #sum(du==0) #4486
-#by(du, dat$hivstatus_broad, sum)
+#by(du, dat$hivstale5y, sum)
 #c(97645.92,79372.85,362437.1)/365
 #c(952,2329,4285)/(c(97645.92,79372.85,362437.1)/365)
 
@@ -247,9 +254,9 @@ lx2 <- Lexis(entry = list(per=cal.yr(entry)), exit = list(per=cal.yr(exit)+.0000
 #+.000001 was added in exit year in order to overcome artefact of having 
 #same exit and entry date from splitting at first positive dates, and birthdates
 summary(lx2)
-summary(lx2, by='hivstatus_broad', Rates = T, scale = 1000)
+summary(lx2, by='hivstale5y', Rates = T, scale = 1000)
 
-sv2 <- survfit(Surv(time=time0, time2 = timex, event = fail2) ~ hivstatus_broad, data=dat) #errors
+sv2 <- survfit(Surv(time=time0, time2 = timex, event = fail2) ~ hivstale5y, data=dat) #errors
 summary(sv2)
 summary(sv2, times = c(20, 30, 40))
 plot(sv2, conf.int=FALSE, mark.time=FALSE, col=1:3, ymin = .8) #by HIV status
@@ -259,7 +266,7 @@ legend('bottomleft',legend = c('neg','pos','unk'), col=1:3, lty=1)
 #the rest# delete after a while
 #plot(survfit(Surv(time0, timex, fail0) ~ 1, data=dat), conf.int=FALSE, mark.time=FALSE) #no comparison
 #sv <- with(dat,Surv(time0, timex, fail0))
-sv <- survfit(Surv(time=time0, time2 = timex, event = fail0) ~ hivstatus_broad, data=dat) #errors
+sv <- survfit(Surv(time=time0, time2 = timex, event = fail0) ~ hivstale5y, data=dat) #errors
 sv
 summary(sv)
 summary(sv, times = c(20, 30, 40))
@@ -279,14 +286,14 @@ legend('bottomleft',legend = c("men","women"), col=1:2, lty=1)
 if(FALSE){
   #this method uses each line as a single case, which is not true
   py <- pyears(Surv(time=time0, time2 = timex, event = fail0) ~ 1, data=dat, scale = 1)
-  py_hiv <- pyears(Surv(time=time0, time2 = timex, event = fail0) ~ hivstatus_broad, data=dat, scale = 1)
+  py_hiv <- pyears(Surv(time=time0, time2 = timex, event = fail0) ~ hivstale5y, data=dat, scale = 1)
   
 }
 
 #basic
-#svcox <- coxph(Surv(time=time0, time2 = timex, event = fail2) ~ factor(hivstatus_broad), data=dat) 
+#svcox <- coxph(Surv(time=time0, time2 = timex, event = fail2) ~ factor(hivstale5y), data=dat) 
 #summary(svcox)
-svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(hivstatus_broad), data=dat) 
+svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(hivstale5y), data=dat) 
 summary(svcox)
 
 po_con <- c('sex','age','residence')
@@ -295,37 +302,37 @@ po_con <- c('sex','age','residence')
 # NA assumed to be Unknown
 
 #basic+res *
-#res.svcox <- coxph(Surv(time=time0, time2 = timex, event = fail2) ~ hivstatus_broad+residence, data=dat) 
+#res.svcox <- coxph(Surv(time=time0, time2 = timex, event = fail2) ~ hivstale5y+residence, data=dat) 
 #summary(res.svcox)
-res.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(hivstatus_broad)+factor(residence), data=dat) 
+res.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(hivstale5y)+factor(residence), data=dat) 
 summary(res.svcox)
 
 #basic+sex *
-#sex.svcox <- coxph(Surv(time=time0, time2 = timex, event = fail2) ~ hivstatus_broad+sex, data=dat) 
+#sex.svcox <- coxph(Surv(time=time0, time2 = timex, event = fail2) ~ hivstale5y+sex, data=dat) 
 #summary(sex.svcox)
-sex.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(hivstatus_broad)+factor(sex), data=dat) 
+sex.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(hivstale5y)+factor(sex), data=dat) 
 summary(sex.svcox)
 
 #basic+age *?
-#age.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(hivstatus_broad)+factor(agegrp), data=dat) #error
-age.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(hivstatus_broad)+age, data=dat)
+#age.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(hivstale5y)+factor(agegrp), data=dat) #error
+age.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(hivstale5y)+age, data=dat)
 summary(age.svcox)
 
 #basic+age+res+sex
-ars.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(hivstatus_broad)+age+factor(residence)+factor(sex), data=dat) 
+ars.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(hivstale5y)+age+factor(residence)+factor(sex), data=dat) 
 summary(ars.svcox)
 
 #basic+age+res+sex
-as.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(hivstatus_broad)+age+factor(sex), data=dat) 
+as.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(hivstale5y)+age+factor(sex), data=dat) 
 summary(as.svcox)
 
 plot(svcox, conf.int=FALSE, mark.time=FALSE, col=1:3, ymin = .8) #by HIV status
 legend('bottomleft',legend = c('neg','pos','unk'), col=1:3, lty=1)
 
-svcoxid <- coxph(Surv(time=time0, time2 = timex, event = fail0) ~ hivstatus_broad+cluster(idno_original), data=dat) #errors
-svcoxx <- coxph(Surv(time=time0, time2 = timex, event = fail0) ~ hivstatus_broad+sex, data=dat) #errors
+svcoxid <- coxph(Surv(time=time0, time2 = timex, event = fail0) ~ hivstale5y+cluster(idno_original), data=dat) #errors
+svcoxx <- coxph(Surv(time=time0, time2 = timex, event = fail0) ~ hivstale5y+sex, data=dat) #errors
 ggsurvplot(svcox)
-survdiff(Surv(time=time0, time2 = timex, event = fail0) ~ hivstatus_broad, data=dat)
+survdiff(Surv(time=time0, time2 = timex, event = fail0) ~ hivstale5y, data=dat)
 
 plot(sv, conf.int=FALSE, mark.time=FALSE, col=1:3) #by HIV status
 legend('topright',legend = c('neg','pos','unk'), col=1:3, lty=1)
