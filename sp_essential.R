@@ -217,6 +217,13 @@ for(i in 1:length(varDes)){
   des[[i]] <- table(datL[,which(colnames(datL)==varDes[i])], exclude = NULL)
 }
 names(des) <- varDes
+A <- table(datL$agegrp,datL$sex,  exclude = NULL)
+datLallcause <- datL[datL$`_d`==1,]
+datLextInj <- datL[datL$fail2==1,]
+B <- table(datLallcause$agegrp,datLallcause$sex,  exclude = NULL)
+Cee <- table(datLextInj$agegrp,datLextInj$sex,  exclude = NULL)
+agebrkdwn <- cbind(A,B,Cee)
+#write.csv(agebrkdwn,)
 
 #write.csv(varDes,'descript_names.csv')
 #lapply(des, function(x){write.table(data.frame(x),'descriptives.csv',append = T,sep = ',')})
@@ -235,7 +242,7 @@ names(dat)[names(dat)=="_d"] <- "fail0"
 ####Survival Analysis####
 
 testOClist <- c("hivstatus_broad","hivstale5y", "missingFixed", "seroconFixed", "allFixed")
-testOC <- testOClist[1]
+#testOC <- testOClist[1]
 
 ###SURVIVAL CURVE####
 for(i in 1:length(testOClist)){
@@ -264,8 +271,14 @@ for(i in 1:length(testOClist)){
 #basic
 #svcox <- coxph(Surv(time=time0, time2 = timex, event = fail2) ~ factor(hivstale5y), data=dat) 
 #summary(svcox)
+testOC <- testOClist[5] #c("hivstatus_broad","hivstale5y", "missingFixed", "seroconFixed", "allFixed")
 svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(dat[,which(names(dat) %in% testOC)]), data=dat) 
 summary(svcox)
+base.ph <- cox.zph(svcox)
+plot(base.ph) #TEST PROPORTIONALITY
+#cumulative hazard
+plot(survfit(Surv(time=time0, time2 = timex, event = fail0) ~ allFixed, data = dat),fun='cloglog',xlab = 'Years', ylab="Cumulative Hazard (log)")
+plot(survfit(Surv(time=time0, time2 = timex, event = fail2) ~ allFixed, data = dat),fun='cloglog',xlab = 'Years', ylab="Cumulative Hazard (log)",lty=1:3)
 
 po_con <- c('sex','age','residence')
 #? timeposneg??? > Negative test expiry date in years
@@ -277,49 +290,114 @@ po_con <- c('sex','age','residence')
 #summary(res.svcox)
 res.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(dat[,which(names(dat) %in% testOC)])+factor(residence), data=dat) 
 summary(res.svcox)
+res.ph <- cox.zph(res.svcox)
+plot(res.ph) #TEST PROPORTIONALITY
 
 #basic+sex *
 #sex.svcox <- coxph(Surv(time=time0, time2 = timex, event = fail2) ~ hivstale5y+sex, data=dat) 
 #summary(sex.svcox)
 sex.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(dat[,which(names(dat) %in% testOC)])+factor(sex), data=dat) 
 summary(sex.svcox)
+sex.ph <- cox.zph(sex.svcox)
+plot(sex.ph) #TEST PROPORTIONALITY
 
 #basic+age *?
 #age.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(hivstale5y)+factor(agegrp), data=dat) #error
 age.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(dat[,which(names(dat) %in% testOC)])+age, data=dat)
 summary(age.svcox)
+age.ph <- cox.zph(age.svcox)
+plot(age.ph) #TEST PROPORTIONALITY
 
-#basic+age+res+sex
-ars.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(dat[,which(names(dat) %in% testOC)])+age+factor(residence)+factor(sex), data=dat) 
-summary(ars.svcox)
 
 #basic+age+sex
 as.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(dat[,which(names(dat) %in% testOC)])+age+factor(sex), data=dat) 
 summary(as.svcox)
+as.ph <- cox.zph(as.svcox)
+as.ph
+plot(as.ph) #TEST PROPORTIONALITY
 
-#extracting exp(coef) and 95% CI # example
-tmp <- summary(svcox)
-str(tmp)
-tmp$conf.int
-round(tmp$conf.int[1,1],4)
-round(tmp$conf.int[1,3],4)
-round(tmp$conf.int[1,4],4)
-tmp$waldtest[3]
+#basic+age+res+sex
+ars.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(dat[,which(names(dat) %in% testOC)])+age+factor(residence)+factor(sex), data=dat) 
+summary(ars.svcox)
+ars.ph <- cox.zph(ars.svcox)
+ars.ph
+plot(ars.ph) #TEST PROPORTIONALITY
 
-results <- list() #continue
+
+#producing RR (crude, partial, fully adj) and p values
+results <- list()
 for(i in 1:length(testOClist)){
   testOC <- testOClist[i]
-  cph_summ <- tmp #summary(coxph object here)
-  co <- round(cph_summ$conf.int[1,1],4)
-  lo <- round(cph_summ$conf.int[1,3],4)
-  hi <- round(cph_summ$conf.int[1,4],4)
+  
+  #crude
+  svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(dat[,which(names(dat) %in% testOC)]), data=dat) 
+  
+  cph_summ <- summary(svcox) #summary(coxph object here)
+  co_pos <- round(cph_summ$conf.int[1,1],4)
+  lo_pos <- round(cph_summ$conf.int[1,3],4)
+  hi_pos <- round(cph_summ$conf.int[1,4],4)
+  co_un <- round(cph_summ$conf.int[2,1],4)
+  lo_un <- round(cph_summ$conf.int[2,3],4)
+  hi_un <- round(cph_summ$conf.int[2,4],4)
   waldp <- round(cph_summ$waldtest[3],6)
-  rr_crude <- c(paste(co," (", lo," to ", hi,")", sep = ""), waldp)
-  rr_partial <- c(paste(co," (", lo," to ", hi,")", sep = ""), waldp)
-  rr_full <- c(paste(co," (", lo," to ", hi,")", sep = ""), waldp)
+  rr_crude <- c(paste(co_pos," (", lo_pos," to ", hi_pos,")", sep = ""), paste(co_un," (", lo_un," to ", hi_un,")", sep = ""), waldp)
+  
+  #partial
+  #basic+age+sex
+  as.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(dat[,which(names(dat) %in% testOC)])+age+factor(sex), data=dat) 
+  
+  cph_summ <- summary(as.svcox) #summary(coxph object here)
+  co_pos <- round(cph_summ$conf.int[1,1],4)
+  lo_pos <- round(cph_summ$conf.int[1,3],4)
+  hi_pos <- round(cph_summ$conf.int[1,4],4)
+  co_un <- round(cph_summ$conf.int[2,1],4)
+  lo_un <- round(cph_summ$conf.int[2,3],4)
+  hi_un <- round(cph_summ$conf.int[2,4],4)
+  waldp <- round(cph_summ$waldtest[3],6)
+  rr_partial <- c(paste(co_pos," (", lo_pos," to ", hi_pos,")", sep = ""), paste(co_un," (", lo_un," to ", hi_un,")", sep = ""), waldp)
+  
+  #fully adj
+  #basic+age+res+sex
+  ars.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(dat[,which(names(dat) %in% testOC)])+age+factor(residence)+factor(sex), data=dat) 
+  
+  cph_summ <- summary(ars.svcox) #summary(coxph object here)
+  co_pos <- round(cph_summ$conf.int[1,1],4)
+  lo_pos <- round(cph_summ$conf.int[1,3],4)
+  hi_pos <- round(cph_summ$conf.int[1,4],4)
+  co_un <- round(cph_summ$conf.int[2,1],4)
+  lo_un <- round(cph_summ$conf.int[2,3],4)
+  hi_un <- round(cph_summ$conf.int[2,4],4)
+  waldp <- round(cph_summ$waldtest[3],6)
+  rr_full <- c(paste(co_pos," (", lo_pos," to ", hi_pos,")", sep = ""), paste(co_un," (", lo_un," to ", hi_un,")", sep = ""), waldp)
+  
   results[[i]] <- c(rr_crude, rr_partial, rr_full)
 }
-matrix(unlist(results),length(testOClist),2*3, byrow=T)
+rr_results <- matrix(unlist(results),length(testOClist),3*3, byrow=T)
+write.csv(rr_results,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_rateratios.csv",sep = ""))
+
+#EXTRACTING COEFFICIENTS
+if(FALSE){
+  results <- list() #base structure, sample
+  for(i in 1:length(testOClist)){
+    testOC <- testOClist[i]
+    
+    cph_summ <- tmp #summary(coxph object here)
+    #extracting exp(coef) and 95% CI # example
+    co_pos <- round(cph_summ$conf.int[1,1],4)
+    lo_pos <- round(cph_summ$conf.int[1,3],4)
+    hi_pos <- round(cph_summ$conf.int[1,4],4)
+    co_un <- round(cph_summ$conf.int[2,1],4)
+    lo_un <- round(cph_summ$conf.int[2,3],4)
+    hi_un <- round(cph_summ$conf.int[2,4],4)
+    waldp <- round(cph_summ$waldtest[3],6)
+    rr_crude <- c(paste(co_pos," (", lo_pos," to ", hi_pos,")", sep = ""), paste(co_un," (", lo_un," to ", hi_un,")", sep = ""), waldp)
+    rr_partial <- c(paste(co_pos," (", lo_pos," to ", hi_pos,")", sep = ""), paste(co_un," (", lo_un," to ", hi_un,")", sep = ""), waldp)
+    rr_full <- c(paste(co_pos," (", lo_pos," to ", hi_pos,")", sep = ""), paste(co_un," (", lo_un," to ", hi_un,")", sep = ""), waldp)
+    results[[i]] <- c(rr_crude, rr_partial, rr_full)
+  }
+  final_results <- matrix(unlist(results),length(testOClist),3*3, byrow=T)
+  
+}
 
 #lexis
 if(FALSE){
