@@ -238,19 +238,29 @@ testOClist <- c("hivstatus_broad","hivstale5y", "missingFixed", "seroconFixed", 
 testOC <- testOClist[1]
 
 ###SURVIVAL CURVE####
-sv <- survfit(Surv(time=time0, time2 = timex, event = fail0) ~ dat[,which(names(dat) %in% testOC)], data=dat)
-#sv <- survfit(Surv(time=time0, time2 = timex, event = fail0) ~ hivstale5y, data=dat) #ALL CAUSES OF DEATH
-plot(sv, conf.int=FALSE, mark.time=FALSE, col=1:3, main=paste(testOC, "all causes")) #by HIV status
-legend('topright',legend = c('neg','pos','unk'), col=1:3, lty=1)
+for(i in 1:length(testOClist)){
+  testOC <- testOClist[i]
+  
+  png(paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_",testOC,"_allCause.png",sep = ""), width = 800, height = 600)
+  sv <- survfit(Surv(time=time0, time2 = timex, event = fail0) ~ dat[,which(names(dat) %in% testOC)], data=dat)
+  #sv <- survfit(Surv(time=time0, time2 = timex, event = fail0) ~ hivstale5y, data=dat) #ALL CAUSES OF DEATH
+  plot(sv, conf.int=FALSE, mark.time=FALSE, col=1:3, main=paste(testOC, ", all causes", sep = "")) #by HIV status
+  legend('topright',legend = c('neg','pos','unk'), col=1:3, lty=1)
+  dev.off()
+  
+  png(paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_",testOC,"_injuryCause.png",sep = ""), width = 800, height = 600)
+  sv2 <- survfit(Surv(time=time0, time2 = timex, event = fail2) ~ dat[,which(names(dat) %in% testOC)], data=dat) #Deaths due to injuries alone: fail2
+  #summary(sv2)
+  #summary(sv2, times = c(20, 30, 40))
+  plot(sv2, conf.int=FALSE, mark.time=FALSE, col=1:3, ymin = .8, main=paste(testOC, ", external injury", sep = "")) #by HIV status
+  legend('bottomleft',legend = c('neg','pos','unk'), col=1:3, lty=1)
+  #ggsurvplot(sv2) #takes too much time and memory
+  dev.off()
+}
 
-sv2 <- survfit(Surv(time=time0, time2 = timex, event = fail2) ~ dat[,which(names(dat) %in% testOC)], data=dat) #Deaths due to injuries alone: fail2
-#summary(sv2)
-#summary(sv2, times = c(20, 30, 40))
-plot(sv2, conf.int=FALSE, mark.time=FALSE, col=1:3, ymin = .8, main=paste(testOC, "ext. inj")) #by HIV status
-legend('bottomleft',legend = c('neg','pos','unk'), col=1:3, lty=1)
-#ggsurvplot(sv2) #takes too much time and memory
 
 ###COX REGRESSION####
+#!!need to check proportionality of hazards
 #basic
 #svcox <- coxph(Surv(time=time0, time2 = timex, event = fail2) ~ factor(hivstale5y), data=dat) 
 #summary(svcox)
@@ -287,8 +297,29 @@ summary(ars.svcox)
 as.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(dat[,which(names(dat) %in% testOC)])+age+factor(sex), data=dat) 
 summary(as.svcox)
 
+#extracting exp(coef) and 95% CI # example
+tmp <- summary(svcox)
+str(tmp)
+tmp$conf.int
+round(tmp$conf.int[1,1],4)
+round(tmp$conf.int[1,3],4)
+round(tmp$conf.int[1,4],4)
+tmp$waldtest[3]
 
-
+results <- list() #continue
+for(i in 1:length(testOClist)){
+  testOC <- testOClist[i]
+  cph_summ <- tmp #summary(coxph object here)
+  co <- round(cph_summ$conf.int[1,1],4)
+  lo <- round(cph_summ$conf.int[1,3],4)
+  hi <- round(cph_summ$conf.int[1,4],4)
+  waldp <- round(cph_summ$waldtest[3],6)
+  rr_crude <- c(paste(co," (", lo," to ", hi,")", sep = ""), waldp)
+  rr_partial <- c(paste(co," (", lo," to ", hi,")", sep = ""), waldp)
+  rr_full <- c(paste(co," (", lo," to ", hi,")", sep = ""), waldp)
+  results[[i]] <- c(rr_crude, rr_partial, rr_full)
+}
+matrix(unlist(results),length(testOClist),2*3, byrow=T)
 
 #lexis
 if(FALSE){
