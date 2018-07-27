@@ -322,7 +322,7 @@ m.dist
 #check result
 py.m <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ sex, data=dat, scale = 1)
 summary(py.m,rate = T, ci.r = T)
-write.csv(m.dist,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_Women.csv",sep = "") )
+write.csv(m.dist,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_Men.csv",sep = "") )
 }
 
 #py_agegrp_extInj <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ agegrp, data=dat, scale = 1)
