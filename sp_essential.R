@@ -148,6 +148,10 @@ table(dat$fail2, exclude = NULL) #1270599non-case ?giving 773 deaths from accide
 #tmp2 <- dat[fail2fast==1,]
 #identical(tmp1, tmp2) #TRUE
 
+#missing of main exposure variable
+#table(datL$seroconFixed,datL$fail2, exclude = NULL) #5 records with missing hivstatus, seroconFixed
+#datL[datL$`_d` ==0 & datL$va==TRUE,] #12 records with no fail but had va, Undeads with COD
+
 #checking hivstatus_broad
 #already done in stata, 3rd version of dataset
 #dat$neg_yr <- (dat$exit - dat$last_neg_date)/365.25
@@ -217,12 +221,113 @@ for(i in 1:length(varDes)){
   des[[i]] <- table(datL[,which(colnames(datL)==varDes[i])], exclude = NULL)
 }
 names(des) <- varDes
-A <- table(datL$agegrp,datL$sex,  exclude = NULL)
-datLallcause <- datL[datL$`_d`==1,]
-datLextInj <- datL[datL$fail2==1,]
-B <- table(datLallcause$agegrp,datLallcause$sex,  exclude = NULL)
-Cee <- table(datLextInj$agegrp,datLextInj$sex,  exclude = NULL)
-agebrkdwn <- cbind(A,B,Cee)
+
+
+
+####sex, age, py distributions####
+if(FALSE){
+per <- 10000
+desTableNames <- c('Individuals','Person-years','All cause: deaths', 'Rate', 'Low 95%CI', 'High 95%CI','Ext. Inj: deaths', 'Rate', 'Low 95%CI', 'High 95%CI')
+no.individuals <- table(datL$agegrp,datL$sex,  exclude = NULL)
+datLf <- datL[datL$sex=="Women",]
+datLm <- datL[datL$sex=="Men",]
+# A <- <- table(datL$agegrp,datL$sex,  exclude = NULL)
+# datLallcause <- datL[datL$`_d`==1,]
+# datLextInj <- datL[datL$fail2==1,]
+# B <- table(datLallcause$agegrp,datLallcause$sex,  exclude = NULL)
+# Cee <- table(datLextInj$agegrp,datLextInj$sex,  exclude = NULL)
+# agebrkdwn <- cbind(A,B,Cee)
+
+
+#3 places to change .f , "Women", no.individuals[,2]
+#pyaa: person-years by agegroup all causes
+pyaa.f <- pyears(Surv(time=time0, time2 = timex, event = fail0) ~ agegrp, data=dat[dat$sex=="Women",], scale = 1)
+# pyaa.f.summ <- summary(pyaa.f, rate = T, ci.r = T)
+pyaa.f.py <- pyaa.f$pyears
+pyaa.f.event <- pyaa.f$event
+pyaa.f.rate <- pyaa.f.event/pyaa.f.py
+pyaa.f.lo <- exp(log(pyaa.f.rate)-(1.96/sqrt(pyaa.f.event)))
+pyaa.f.hi <- exp(log(pyaa.f.rate)+(1.96/sqrt(pyaa.f.event)))
+
+#pyae: person-years by agegroup, external injuries
+pyae.f <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ agegrp, data=dat[dat$sex=="Women",], scale = 1)
+# pyae.f.summ <- summary(pyae.f, rate = T, ci.r = T)
+pyae.f.py <- pyae.f$pyears
+pyae.f.event <- pyae.f$event
+pyae.f.rate <- pyae.f.event/pyae.f.py
+pyae.f.lo <- exp(log(pyae.f.rate)-(1.96/sqrt(pyae.f.event)))
+pyae.f.hi <- exp(log(pyae.f.rate)+(1.96/sqrt(pyae.f.event)))
+
+f.dist <- cbind(no.individuals[,2],round(pyaa.f.py),pyaa.f.event,round(pyaa.f.rate*per,2),round(pyaa.f.lo*per,2),round(pyaa.f.hi*per,2),pyae.f.event,round(pyae.f.rate*per,2),round(pyae.f.lo*per,2),round(pyae.f.hi*per,2))
+
+tot.indi <- sum(no.individuals[,2])
+tot.pyaa.f.py <- sum(pyaa.f.py)
+tot.pyaa.f.event <- sum(pyaa.f.event)
+tot.pyaa.f.rate <- tot.pyaa.f.event/tot.pyaa.f.py
+tot.pyaa.f.lo <- exp(log(tot.pyaa.f.rate)-(1.96/sqrt(tot.pyaa.f.event)))
+tot.pyaa.f.hi <- exp(log(tot.pyaa.f.rate)+(1.96/sqrt(tot.pyaa.f.event)))
+tot.pyae.f.py <- sum(pyae.f.py)
+tot.pyae.f.event <- sum(pyae.f.event)
+tot.pyae.f.rate <- tot.pyae.f.event/tot.pyae.f.py
+tot.pyae.f.lo <- exp(log(tot.pyae.f.rate)-(1.96/sqrt(tot.pyae.f.event)))
+tot.pyae.f.hi <- exp(log(tot.pyae.f.rate)+(1.96/sqrt(tot.pyae.f.event)))
+Total <- c(tot.indi,round(tot.pyaa.f.py),tot.pyaa.f.event,round(tot.pyaa.f.rate*per,2),round(tot.pyaa.f.lo*per,2),round(tot.pyaa.f.hi*per,2),tot.pyae.f.event,round(tot.pyae.f.rate*per,2),round(tot.pyae.f.lo*per,2),round(tot.pyae.f.hi*per,2))
+
+f.dist <- rbind(f.dist, Total)
+colnames(f.dist) <- desTableNames
+f.dist
+#check result
+py.f <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ sex, data=dat, scale = 1)
+summary(py.f,rate = T, ci.r = T)
+write.csv(f.dist,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_Women.csv",sep = "") )
+
+####Men####
+#3 places to change .m , "Men", no.individuals[,1]
+#pyaa: person-years by agegroup all causes
+pyaa.m <- pyears(Surv(time=time0, time2 = timex, event = fail0) ~ agegrp, data=dat[dat$sex=="Men",], scale = 1)
+# pyaa.m.summ <- summary(pyaa.m, rate = T, ci.r = T)
+pyaa.m.py <- pyaa.m$pyears
+pyaa.m.event <- pyaa.m$event
+pyaa.m.rate <- pyaa.m.event/pyaa.m.py
+pyaa.m.lo <- exp(log(pyaa.m.rate)-(1.96/sqrt(pyaa.m.event)))
+pyaa.m.hi <- exp(log(pyaa.m.rate)+(1.96/sqrt(pyaa.m.event)))
+
+#pyae: person-years by agegroup, external injuries
+pyae.m <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ agegrp, data=dat[dat$sex=="Men",], scale = 1)
+# pyae.m.summ <- summary(pyae.m, rate = T, ci.r = T)
+pyae.m.py <- pyae.m$pyears
+pyae.m.event <- pyae.m$event
+pyae.m.rate <- pyae.m.event/pyae.m.py
+pyae.m.lo <- exp(log(pyae.m.rate)-(1.96/sqrt(pyae.m.event)))
+pyae.m.hi <- exp(log(pyae.m.rate)+(1.96/sqrt(pyae.m.event)))
+
+m.dist <- cbind(no.individuals[,1],round(pyaa.m.py),pyaa.m.event,round(pyaa.m.rate*per,2),round(pyaa.m.lo*per,2),round(pyaa.m.hi*per,2),pyae.m.event,round(pyae.m.rate*per,2),round(pyae.m.lo*per,2),round(pyae.m.hi*per,2))
+
+tot.indi <- sum(no.individuals[,1])
+tot.pyaa.m.py <- sum(pyaa.m.py)
+tot.pyaa.m.event <- sum(pyaa.m.event)
+tot.pyaa.m.rate <- tot.pyaa.m.event/tot.pyaa.m.py
+tot.pyaa.m.lo <- exp(log(tot.pyaa.m.rate)-(1.96/sqrt(tot.pyaa.m.event)))
+tot.pyaa.m.hi <- exp(log(tot.pyaa.m.rate)+(1.96/sqrt(tot.pyaa.m.event)))
+tot.pyae.m.py <- sum(pyae.m.py)
+tot.pyae.m.event <- sum(pyae.m.event)
+tot.pyae.m.rate <- tot.pyae.m.event/tot.pyae.m.py
+tot.pyae.m.lo <- exp(log(tot.pyae.m.rate)-(1.96/sqrt(tot.pyae.m.event)))
+tot.pyae.m.hi <- exp(log(tot.pyae.m.rate)+(1.96/sqrt(tot.pyae.m.event)))
+Total <- c(tot.indi,round(tot.pyaa.m.py),tot.pyaa.m.event,round(tot.pyaa.m.rate*per,2),round(tot.pyaa.m.lo*per,2),round(tot.pyaa.m.hi*per,2),tot.pyae.m.event,round(tot.pyae.m.rate*per,2),round(tot.pyae.m.lo*per,2),round(tot.pyae.m.hi*per,2))
+
+m.dist <- rbind(m.dist, Total)
+colnames(m.dist) <- desTableNames
+m.dist
+#check result
+py.m <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ sex, data=dat, scale = 1)
+summary(py.m,rate = T, ci.r = T)
+write.csv(m.dist,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_Women.csv",sep = "") )
+}
+
+#py_agegrp_extInj <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ agegrp, data=dat, scale = 1)
+#pyae <- summary(py_agegrp_extInj, rate = T, ci.r = T)
+
 #write.csv(agebrkdwn,)
 
 #write.csv(varDes,'descript_names.csv')
@@ -237,7 +342,10 @@ table(datL$`_d`, datL$va, exclude = NULL) #12 are not dead but have VA!!!
 #dat$hivstale5y[is.na(dat$hivstale5y)] <- 'Unknown'
 names(dat)[names(dat)=="_t0"] <- "time0"
 names(dat)[names(dat)=="_t"] <- "timex"
-names(dat)[names(dat)=="_d"] <- "fail0"
+names(dat)[names(dat)=="_d"] <- "fail0" 
+#fail definitions
+#STATA defined death, 'failure' is the variable STATA used for this. there's also 'fail' which is not used
+#fail2 is external injury related death
 
 ####Survival Analysis####
 
@@ -466,8 +574,19 @@ if(FALSE){
   
   if(FALSE){
     #this method uses each line as a single case, which is not true
+    #person years
     py <- pyears(Surv(time=time0, time2 = timex, event = fail0) ~ 1, data=dat, scale = 1)
     py_hiv <- pyears(Surv(time=time0, time2 = timex, event = fail0) ~ hivstale5y, data=dat, scale = 1)
+    summary(py_hiv, rate = T, ci.r = T)
+    
+    py_hiv2 <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ hivstale5y, data=dat, scale = 1)
+    summary(py_hiv2, rate = T, ci.r = T)
+    
+    py_hiv2 <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ allFixed, data=dat, scale = 1)
+    summary(py_hiv2, rate = T, ci.r = T)
+    
+    py_hiv2 <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ seroconFixed, data=dat, scale = 1)
+    summary(py_hiv2, rate = T, ci.r = T)
     
   }
   
