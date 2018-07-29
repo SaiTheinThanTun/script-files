@@ -31,6 +31,7 @@ lt <- function(x, per = 1, ci95 = FALSE, nax = .5, ageint = 1){
   lo <- exp(log(rate)-(1.96/sqrt(event)))
   hi <- exp(log(rate)+(1.96/sqrt(event)))
   nqx <- (rate*ageint)/(1+(1-nax)*rate*ageint)
+  nqx[length(event)] <- 1 #last nqx for open ended interval must be 1!
   npx <- 1-nqx
   
   lx <- NA
@@ -44,7 +45,10 @@ lt <- function(x, per = 1, ci95 = FALSE, nax = .5, ageint = 1){
   nLx <- NA
   for(i in 1:length(event)){
     if(i<length(event)){nLx[i] <- (lx[i+1]*ageint)+(ageint*nax*ndx[i])}
-    else {nLx[i] <- lx[i]/rate[i]}
+    else {
+      if(rate[i]!=0) nLx[i] <- lx[i]/rate[i]
+      else nLx[i] <- 0
+      }
   }
   
   Tx <- NA
@@ -52,7 +56,7 @@ lt <- function(x, per = 1, ci95 = FALSE, nax = .5, ageint = 1){
     Tx[i] <- sum(nLx[i:length(event)])
   }
   
-  ex <- Tx/nLx
+  ex <- Tx/lx
   
   if(ci95==TRUE){
     y <- cbind(py, event, rate*per, lo*per, hi*per, nqx, npx, lx, ndx, nLx, Tx, ex)
@@ -65,5 +69,6 @@ lt <- function(x, per = 1, ci95 = FALSE, nax = .5, ageint = 1){
     y
   }
 }
-
+#things to fix
+#last nqx should be 1!
 lt(asmr.all)
