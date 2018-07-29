@@ -4,6 +4,7 @@
 library(Rcpp)
 library("readstata13")
 library("Hmisc")
+source('~/OneDrive/Summer Project/script-files/sp_functions.R')
 createNewFiles <- 0 #switch to turn on/off saving new RDS files. ie. if dta file has been modified in stata
 
 setwd("~/OneDrive/Summer Project/data/")

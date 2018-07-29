@@ -13,27 +13,7 @@ library(survival)
 library(survminer)
 library(Epi)
 library(popEpi)
-####function to extract a record####
-reveal <- function(x){
-  # View(liteumk[liteumk$idno_original==x,])
-  View(dat[dat$idno_original==x,])
-}
-reveal2 <- function(x,y=NA){
-  # View(liteumk[liteumk$idno_original==x,])
-  if(is.na(y)){
-    View(dat[dat$idno_original==x,])
-  }
-  else
-    View(dat[dat$idno_original==x,which(names(dat) %in% y)])
-}
-####function to identify frequentest value####
-tableR <- function(x){
-  #function to identify the most frequent 'residence' value
-  #taking the earliest one if there are 2 values with equal frequency
-  unique_r <- unique(x)
-  tr <- rbind(label=unique_r, count=sapply(unique_r,function(y)sum(x==y, na.rm = T)))
-  tr[1,which.max(tr[2,])]
-}
+source('~/OneDrive/Summer Project/script-files/sp_functions.R')
 
 setwd("~/OneDrive/Summer Project/data/")
 
@@ -223,11 +203,28 @@ for(i in 1:length(varDes)){
 names(des) <- varDes
 
 
+#some checking on hadva and COD
+datL$va <- !is.na(datL$COD)
+table(datL$hadva, datL$va, exclude = NULL)
+table(datL$`_d`, datL$va, exclude = NULL) #12 are not dead but have VA!!!
+
+#get hivstale5y missing to unknown #recoding unknown
+#dat$hivstale5y[is.na(dat$hivstale5y)] <- 'Unknown'
+names(dat)[names(dat)=="_t0"] <- "time0"
+names(dat)[names(dat)=="_t"] <- "timex"
+names(dat)[names(dat)=="_d"] <- "fail0" 
+#fail definitions
+#STATA defined death, 'failure' is the variable STATA used for this. there's also 'fail' which is not used
+#fail2 is external injury related death
+
+#saveRDS(dat, 'dat_lifetable.RDS') #processed data file to be used for lifetable
+
 
 ####sex, age, py distributions####
+desTableNames <- c('Individuals','Person-years','All cause: deaths', 'Rate', 'Low 95%CI', 'High 95%CI','Ext. Inj: deaths', 'Rate', 'Low 95%CI', 'High 95%CI')
 if(FALSE){
 per <- 10000
-desTableNames <- c('Individuals','Person-years','All cause: deaths', 'Rate', 'Low 95%CI', 'High 95%CI','Ext. Inj: deaths', 'Rate', 'Low 95%CI', 'High 95%CI')
+
 no.individuals <- table(datL$agegrp,datL$sex,  exclude = NULL)
 datLf <- datL[datL$sex=="Women",]
 datLm <- datL[datL$sex=="Men",]
@@ -333,19 +330,6 @@ write.csv(m.dist,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.tim
 #write.csv(varDes,'descript_names.csv')
 #lapply(des, function(x){write.table(data.frame(x),'descriptives.csv',append = T,sep = ',')})
 
-#some checking on hadva and COD
-datL$va <- !is.na(datL$COD)
-table(datL$hadva, datL$va, exclude = NULL)
-table(datL$`_d`, datL$va, exclude = NULL) #12 are not dead but have VA!!!
-
-#get hivstale5y missing to unknown #recoding unknown
-#dat$hivstale5y[is.na(dat$hivstale5y)] <- 'Unknown'
-names(dat)[names(dat)=="_t0"] <- "time0"
-names(dat)[names(dat)=="_t"] <- "timex"
-names(dat)[names(dat)=="_d"] <- "fail0" 
-#fail definitions
-#STATA defined death, 'failure' is the variable STATA used for this. there's also 'fail' which is not used
-#fail2 is external injury related death
 
 ####Survival Analysis####
 
@@ -353,6 +337,7 @@ testOClist <- c("hivstatus_broad","hivstale5y", "missingFixed", "seroconFixed", 
 #testOC <- testOClist[1]
 
 ###SURVIVAL CURVE####
+#by hivstatus exposure
 for(i in 1:length(testOClist)){
   testOC <- testOClist[i]
   
@@ -373,6 +358,18 @@ for(i in 1:length(testOClist)){
   dev.off()
 }
 
+#by hivstatus exposure, stratified by sex
+png(paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_injuryCause_Women.png",sep = ""), width = 800, height = 600)
+sv2 <- survfit(Surv(time=time0, time2 = timex, event = fail2) ~ allFixed, data=dat[dat$sex=='Women',]) #Deaths due to injuries alone: fail2
+plot(sv2, conf.int=FALSE, mark.time=FALSE, col=1:3, ymin = .8, main=paste("allFixed", ", external injury, Women", sep = "")) #by HIV status
+legend('bottomleft',legend = c('neg','pos','unk'), col=1:3, lty=1)
+dev.off()
+
+png(paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_injuryCause_Men.png",sep = ""), width = 800, height = 600)
+sv2 <- survfit(Surv(time=time0, time2 = timex, event = fail2) ~ allFixed, data=dat[dat$sex=='Men',]) #Deaths due to injuries alone: fail2
+plot(sv2, conf.int=FALSE, mark.time=FALSE, col=1:3, ymin = .8, main=paste("allFixed", ", external injury, Men", sep = "")) #by HIV status
+legend('bottomleft',legend = c('neg','pos','unk'), col=1:3, lty=1)
+dev.off()
 
 ###COX REGRESSION####
 #!!need to check proportionality of hazards
