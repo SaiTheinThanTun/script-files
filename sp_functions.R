@@ -22,23 +22,48 @@ tableR <- function(x){
 }
 
 #mortality rate (lifetable) extraction####
-lt <- function(x, per=1, ci95 = FALSE){
-  #x is a pyears object
-  tableNames <- c('Person-years','Event', 'Rate', 'Low 95%CI', 'High 95%CI')
+lt <- function(x, per = 1, ci95 = FALSE, nax = .5, ageint = 1){
+  #x is a pyears object with unabridged (single age) ASMR
+  tableNames <- c('Person-years','Event', 'Rate', 'Low 95%CI', 'High 95%CI', 'nqx', 'npx', 'lx', 'ndx', 'nLx', 'Tx', 'ex')
   py <- x$pyears
   event <- x$event
   rate <- event/py
   lo <- exp(log(rate)-(1.96/sqrt(event)))
   hi <- exp(log(rate)+(1.96/sqrt(event)))
+  nqx <- (rate*ageint)/(1+(1-nax)*rate*ageint)
+  npx <- 1-nqx
+  
+  lx <- NA
+  for(i in 1:length(event)){
+    if(i==1){lx[i] <- 1} #radix of 1 so that ex can be directly got from Tx
+    else {lx[i] <- lx[i-1]*npx[i-1]}
+  }
+  
+  ndx <- lx*nqx
+  
+  nLx <- NA
+  for(i in 1:length(event)){
+    if(i<length(event)){nLx[i] <- (lx[i+1]*ageint)+(ageint*nax*ndx[i])}
+    else {nLx[i] <- lx[i]/rate[i]}
+  }
+  
+  Tx <- NA
+  for(i in 1:length(event)){
+    Tx[i] <- sum(nLx[i:length(event)])
+  }
+  
+  ex <- Tx/nLx
   
   if(ci95==TRUE){
-    y <- cbind(py, event, rate*per, lo*per, hi*per)
+    y <- cbind(py, event, rate*per, lo*per, hi*per, nqx, npx, lx, ndx, nLx, Tx, ex)
     colnames(y) <- tableNames
     y
   }
   else{
-    y <- cbind(py, event, rate*per)
+    y <- cbind(py, event, rate*per, nqx, npx, lx, ndx, nLx, Tx, ex)
     colnames(y) <- tableNames[-c(4,5)]
     y
   }
 }
+
+lt(asmr.all)
