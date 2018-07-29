@@ -22,8 +22,9 @@ tableR <- function(x){
 }
 
 #mortality rate (lifetable) extraction####
-lt <- function(x, per = 1, ci95 = FALSE, nax = .5, ageint = 1){
+lt <- function(x, per = 1, ci95 = FALSE, nax = .5, ageint){
   #x is a pyears object with unabridged (single age) ASMR
+  #ageint=1 default has been removed
   tableNames <- c('Person-years','Event', 'Rate', 'Low 95%CI', 'High 95%CI', 'nqx', 'npx', 'lx', 'ndx', 'nLx', 'Tx', 'ex')
   py <- x$pyears
   event <- x$event
@@ -59,16 +60,61 @@ lt <- function(x, per = 1, ci95 = FALSE, nax = .5, ageint = 1){
   ex <- Tx/lx
   
   if(ci95==TRUE){
-    y <- cbind(py, event, rate*per, lo*per, hi*per, nqx, npx, lx, ndx, nLx, Tx, ex)
+    y <- as.data.frame(cbind(py, event, rate*per, lo*per, hi*per, nqx, npx, lx, ndx, nLx, Tx, ex))
     colnames(y) <- tableNames
     y
   }
   else{
-    y <- cbind(py, event, rate*per, nqx, npx, lx, ndx, nLx, Tx, ex)
+    y <- as.data.frame(cbind(py, event, rate*per, nqx, npx, lx, ndx, nLx, Tx, ex))
     colnames(y) <- tableNames[-c(4,5)]
     y
   }
 }
-#things to fix
-#last nqx should be 1!
-lt(asmr.all)
+
+#lt(asmr.all, ageint = 1)
+
+#function for associated single decrement life table (ASDT) and cause deleted life table 
+asdt <- function(allcause, i_cause, ageint, deletion=TRUE){
+  #Associated single decrement life table
+  #allcause and i_cause are dataframe resulted from `lt` function
+  #ageint defines age interval
+  #deletion specifies if othercause (allcause `minus` i_cause) is used
+  tableNames <- c('Person-years','Event', 'Rate', 'nqx', 'npx', 'lx', 'ndx', 'nLx', 'Tx', 'ex')
+  
+  #check if the dateset input are correct
+  if(sum(colnames(allcause) %in% tableNames)!=length(tableNames)) stop("allcause dataset incorrect")
+  if(sum(colnames(i_cause) %in% tableNames)!=length(tableNames)) stop("i_cause dataset incorrect")
+  
+  #subsetting only necessary sections
+  allcause <- allcause[,which(colnames(allcause) %in% tableNames)]
+  i_cause <- i_cause[,which(colnames(i_cause) %in% tableNames)]
+  
+  if(deletion){
+    new_nmx <- allcause$Rate - i_cause$Rate
+  }
+  else {new_nmx <- i_cause$Rate}
+  
+  s_npx <- exp(-ageint*new_nmx) #s denotes star or asterisk*
+  s_npx[length(allcause$Event)] <- 0
+  
+  s_lx <- NA
+  for(i in 1:length(allcause$Event)){
+    if(i==1){s_lx[i] <- 1} #radix of 1 so that ex can be directly got from Tx
+    else {s_lx[i] <- s_lx[i-1]*s_npx[i-1]}
+  }
+  
+  s_ndx <- s_lx*(1-s_npx)
+  
+  s_nLx <- s_ndx/new_nmx
+  
+  s_Tx <- NA
+  for(i in 1:length(allcause$Event)){
+    s_Tx[i] <- sum(s_nLx[i:length(allcause$Event)])
+  }
+  
+  s_ex <- s_Tx/s_lx
+  y <- as.data.frame(cbind(allcause, new_nmx, s_npx, s_lx, s_ndx, s_nLx, s_Tx, s_ex))
+  y
+}
+
+#asdt(allcause = lt.all, i_cause = lt.ext, ageint = 1)
