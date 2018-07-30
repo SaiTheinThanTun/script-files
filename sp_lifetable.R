@@ -38,6 +38,7 @@ asdt.inj.del <- asdt(allcause = lt.all.5, i_cause = lt.inj.5, ageint = 5)
 asdt.inj.del$s_ex[1]-asdt.inj.del$ex[1] #1.868421 years
 
 #comparison within itself in HIV group####
+#hivstatus allFixed has beeen used
 #1 year age group doesn't work as data is inadequate: producing NaN
 #Women
 dat.Women <- dat[dat$sex=='Women',]
@@ -94,7 +95,19 @@ if(creation) write.csv(e15.increase, paste("~/OneDrive/Summer Project/output/",g
 
 
 #Decomposition by age, sex and CoD from injury####
+#Women
 decom.Women.Pos.Neg <- decom(allcause.A=asmr.all.Women.Positive,allcause.B =  asmr.all.Women.Negative, i_cause.A = asmr.inj.Women.Positive,i_cause.B =  asmr.inj.Women.Negative, ageint=1)
 if(creation) write.csv(decom.Women.Pos.Neg, paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_decom_Women_Pos_Neg.csv",sep = ""))
 #sum(decom.Women.Pos.Neg$ndeltax)
 #sum(decom.Women.Pos.Neg$ndeltax.i)
+decom.Women.Unk.Neg <- decom(allcause.A=asmr.all.Women.Unknown,allcause.B =  asmr.all.Women.Negative, i_cause.A = asmr.inj.Women.Unknown,i_cause.B =  asmr.inj.Women.Negative, ageint=1)
+if(creation) write.csv(decom.Women.Unk.Neg, paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_decom_Women_Unk_Neg.csv",sep = ""))
+
+
+#Men
+decom.Men.Pos.Neg <- decom(allcause.A=asmr.all.Men.Positive,allcause.B =  asmr.all.Men.Negative, i_cause.A = asmr.inj.Men.Positive,i_cause.B =  asmr.inj.Men.Negative, ageint=1)
+if(creation) write.csv(decom.Men.Pos.Neg, paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_decom_Men_Pos_Neg.csv",sep = ""))
+#sum(decom.Men.Pos.Neg$ndeltax)
+#sum(decom.Men.Pos.Neg$ndeltax.i)
+decom.Men.Unk.Neg <- decom(allcause.A=asmr.all.Men.Unknown,allcause.B =  asmr.all.Men.Negative, i_cause.A = asmr.inj.Men.Unknown,i_cause.B =  asmr.inj.Men.Negative, ageint=1)
+if(creation) write.csv(decom.Men.Unk.Neg, paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_decom_Men_Unk_Neg.csv",sep = ""))

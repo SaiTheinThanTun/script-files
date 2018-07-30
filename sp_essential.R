@@ -3,6 +3,7 @@
 #essential info to put in report
 lfc <- 1 #left censoring at '2007-01-01'
 rtc <- 1 #right censoring for age above 100
+creation <- FALSE
 
 library(Rcpp)
 library("readstata13")
@@ -276,7 +277,7 @@ f.dist
 #check result
 py.f <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ sex, data=dat, scale = 1)
 summary(py.f,rate = T, ci.r = T)
-write.csv(f.dist,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_Women.csv",sep = "") )
+if(creation) write.csv(f.dist,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_Women.csv",sep = "") )
 
 ####Men####
 #3 places to change .m , "Men", no.individuals[,1]
@@ -319,7 +320,35 @@ m.dist
 #check result
 py.m <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ sex, data=dat, scale = 1)
 summary(py.m,rate = T, ci.r = T)
-write.csv(m.dist,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_Men.csv",sep = "") )
+if(creation) write.csv(m.dist,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_Men.csv",sep = "") )
+
+
+#descriptions on HIV status
+#original rate
+hivstatus_broad.rate <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ hivstatus_broad, data=dat, scale = 1)
+hivstatus_broad.rate <- pyears2(hivstatus_broad.rate, per = 10000)
+if(creation) write.csv(hivstatus_broad.rate,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_hivstatus_broad_rate.csv",sep = "") )
+
+#neg for 5 years
+hivstale5y.rate <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ hivstale5y, data=dat, scale = 1)
+hivstale5y.rate <- pyears2(hivstale5y.rate, per = 10000)
+if(creation) write.csv(hivstale5y.rate,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_hivstale5y_rate.csv",sep = "") )
+
+#neg for 5 years + missing data fixed
+missingFixed.rate <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ missingFixed, data=dat, scale = 1)
+missingFixed.rate <- pyears2(missingFixed.rate, per = 10000)
+if(creation) write.csv(missingFixed.rate,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_missingFixed_rate.csv",sep = "") )
+
+#neg for 5 years + seroconverter data fixed
+seroconFixed.rate <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ seroconFixed, data=dat, scale = 1)
+seroconFixed.rate <- pyears2(seroconFixed.rate, per = 10000)
+if(creation) write.csv(seroconFixed.rate,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_seroconFixed_rate.csv",sep = "") )
+
+#neg for 5 years + all fixed
+allFixed.rate <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ allFixed, data=dat, scale = 1)
+allFixed.rate <- pyears2(allFixed.rate, per = 10000)
+if(creation) write.csv(allFixed.rate,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_allFixed_rate.csv",sep = "") )
+
 }
 
 #py_agegrp_extInj <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ agegrp, data=dat, scale = 1)

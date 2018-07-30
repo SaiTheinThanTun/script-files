@@ -164,3 +164,19 @@ decom <- function(allcause.A, i_cause.A, allcause.B, i_cause.B, ageint){
   row.names(y) <- row.names(allcause.A)
   y
 }
+
+#pyears, event rates and CI function####
+pyears2 <- function(x, per= 1){
+  #x is a pyears object
+  x.py <- x$pyears
+  x.event <- x$event
+  x.rate <- x.event/x.py
+  x.lo <- exp(log(x.rate)-(1.96/sqrt(x.event)))
+  x.hi <- exp(log(x.rate)+(1.96/sqrt(x.event)))
+  y <- as.data.frame(cbind(x.event, x.py, x.rate*per, x.lo*per, x.hi*per))
+  colnames(y) <- c("Event", "Person-years", "Rate", "Low 95%CI", "High 95%CI")
+  y
+}
+
+allFixed.rate <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ allFixed, data=dat, scale = 1)
+pyears2(allFixed.rate, per = 10000)
