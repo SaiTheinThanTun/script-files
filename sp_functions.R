@@ -141,17 +141,26 @@ decom <- function(allcause.A, i_cause.A, allcause.B, i_cause.B, ageint){
   
   lx.A <- allcause.A$lx
   nLx.A <- allcause.A$nLx
+  Tx.A <- allcause.A$Tx
   
   lx.B <- allcause.B$lx
   nLx.B <- allcause.B$nLx
   Tx.B <- allcause.B$Tx
   
+  nmx.A <- allcause.A$Rate
+  nRxi.A <- i_cause.A$Event/allcause.A$Event
+  nmx.B <- allcause.B$Rate
+  nRxi.B <- i_cause.B$Event/allcause.B$Event
   
+  ndeltax <- NA
   for(i in 1:length(allcause.A$Event)){
     if(i<length(allcause.A$Event)){
       ndeltax[i] <- ((lx.A[i]/lx.A[1])*((nLx.B[i]/lx.B[i])-(nLx.A[i]/lx.A[i]))) + ((Tx.B[i+1]/lx.A[1])*((lx.A[i]/lx.B[i])-(lx.A[i+1]/lx.B[i+1])))
     }
     else ndeltax[i] <- (lx.A[i]/lx.A[1])*((nLx.B[i]/lx.B[i])-(nLx.A[i]/lx.A[i]))
   }
-  
+  ndeltax.i <-ndeltax*(nRxi.B*nmx.B-nRxi.A*nmx.A)/(nmx.B-nmx.A)
+  y <- as.data.frame(cbind(lx.A, nLx.A, Tx.A, lx.B, nLx.B, Tx.B, ndeltax,ndeltax.i))
+  row.names(y) <- row.names(allcause.A)
+  y
 }
