@@ -118,3 +118,26 @@ asdt <- function(allcause, i_cause, ageint, deletion=TRUE){
 }
 
 #asdt(allcause = lt.all, i_cause = lt.ext, ageint = 1)
+
+#function for associated single decrement life table (ASDT) and cause deleted life table 
+decom <- function(allcause.A, i_cause.A, allcause.B, i_cause.B, ageint){
+  #decompose by age and cause
+  #data needed: LT of 2 groups eg. HIV+ & -, their all cause mortality and # of i cause deaths
+  #allcause and i_cause are dataframe resulted from `lt` function
+  #ageint defines age interval
+  tableNames <- c('Person-years','Event', 'Rate', 'nqx', 'npx', 'lx', 'ndx', 'nLx', 'Tx', 'ex')
+  
+  #check if the dateset input are correct
+  if(sum(colnames(allcause.A) %in% tableNames)!=length(tableNames)) stop("allcause.A dataset incorrect")
+  if(sum(colnames(i_cause.A) %in% tableNames)!=length(tableNames)) stop("i_cause.A dataset incorrect")
+  if(sum(colnames(allcause.B) %in% tableNames)!=length(tableNames)) stop("allcause.B dataset incorrect")
+  if(sum(colnames(i_cause.B) %in% tableNames)!=length(tableNames)) stop("i_cause.B dataset incorrect")
+  
+  #subsetting only necessary sections
+  allcause.A <- allcause.A[,which(colnames(allcause.A) %in% tableNames)]
+  i_cause.A <- i_cause.A[,which(colnames(i_cause.A) %in% tableNames)]
+  allcause.B <- allcause.B[,which(colnames(allcause.B) %in% tableNames)]
+  i_cause.B <- i_cause.B[,which(colnames(i_cause.B) %in% tableNames)]
+  
+  ndeltax <- 
+}

@@ -25,7 +25,7 @@ if(creation) write.csv(lt.inj,paste("~/OneDrive/Summer Project/output/",gsub("\\
 
 #ext. injury deleted lifetable####
 #overall
-asdt.inj.del <- asdt(allcause = lt.all, i_cause = lt.ext, ageint = 1)
+asdt.inj.del <- asdt(allcause = lt.all, i_cause = lt.inj, ageint = 1)
 if(creation) write.csv(asdt.inj.del,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_asdt_inj_del.csv",sep = ""))
 asdt.inj.del$s_ex[1]-asdt.inj.del$ex[1] #1.84 years
 
@@ -37,7 +37,7 @@ lt.inj.5 <- lt(asmr.inj.5, ageint = 5)
 asdt.inj.del <- asdt(allcause = lt.all.5, i_cause = lt.inj.5, ageint = 5)
 asdt.inj.del$s_ex[1]-asdt.inj.del$ex[1] #1.868421 years
 
-#comparison between HIV groups####
+#comparison within itself in HIV group####
 #Women
 dat.Women <- dat[dat$sex=='Women',]
 #Negative
