@@ -139,5 +139,19 @@ decom <- function(allcause.A, i_cause.A, allcause.B, i_cause.B, ageint){
   allcause.B <- allcause.B[,which(colnames(allcause.B) %in% tableNames)]
   i_cause.B <- i_cause.B[,which(colnames(i_cause.B) %in% tableNames)]
   
-  ndeltax <- 
+  lx.A <- allcause.A$lx
+  nLx.A <- allcause.A$nLx
+  
+  lx.B <- allcause.B$lx
+  nLx.B <- allcause.B$nLx
+  Tx.B <- allcause.B$Tx
+  
+  
+  for(i in 1:length(allcause.A$Event)){
+    if(i<length(allcause.A$Event)){
+      ndeltax[i] <- ((lx.A[i]/lx.A[1])*((nLx.B[i]/lx.B[i])-(nLx.A[i]/lx.A[i]))) + ((Tx.B[i+1]/lx.A[1])*((lx.A[i]/lx.B[i])-(lx.A[i+1]/lx.B[i+1])))
+    }
+    else ndeltax[i] <- (lx.A[i]/lx.A[1])*((nLx.B[i]/lx.B[i])-(nLx.A[i]/lx.A[i]))
+  }
+  
 }
