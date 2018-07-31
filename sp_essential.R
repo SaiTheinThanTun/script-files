@@ -409,6 +409,7 @@ testOC <- testOClist[5] #c("hivstatus_broad","hivstale5y", "missingFixed", "sero
 svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(dat[,which(names(dat) %in% testOC)]), data=dat) 
 summary(svcox)
 base.ph <- cox.zph(svcox)
+base.ph
 plot(base.ph) #TEST PROPORTIONALITY
 #cumulative hazard
 plot(survfit(Surv(time=time0, time2 = timex, event = fail0) ~ allFixed, data = dat),fun='cloglog',xlab = 'Years', ylab="Cumulative Hazard (log)")
@@ -425,6 +426,7 @@ po_con <- c('sex','age','residence')
 res.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(dat[,which(names(dat) %in% testOC)])+factor(residence), data=dat) 
 summary(res.svcox)
 res.ph <- cox.zph(res.svcox)
+res.ph
 plot(res.ph) #TEST PROPORTIONALITY
 
 #basic+sex *
@@ -433,6 +435,7 @@ plot(res.ph) #TEST PROPORTIONALITY
 sex.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(dat[,which(names(dat) %in% testOC)])+factor(sex), data=dat) 
 summary(sex.svcox)
 sex.ph <- cox.zph(sex.svcox)
+sex.ph
 plot(sex.ph) #TEST PROPORTIONALITY
 
 #basic+age *?
@@ -440,6 +443,7 @@ plot(sex.ph) #TEST PROPORTIONALITY
 age.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(dat[,which(names(dat) %in% testOC)])+age, data=dat)
 summary(age.svcox)
 age.ph <- cox.zph(age.svcox)
+age.ph
 plot(age.ph) #TEST PROPORTIONALITY
 
 

@@ -9,8 +9,19 @@ creation <- FALSE #WRITE NEW FILES
 
 setwd('~/OneDrive/Summer Project/data')
 dat <- readRDS('dat_lifetable.RDS')
+injNames <- readRDS('accidentNames.RDS')
+
+#putting new variables for each injury
+for(i in 1: length(injNames)){
+  x <- NA
+  x <- (dat$fail2==1)*(dat$COD %in% injNames[i])
+  dat <- cbind(dat,x)
+  colnames(dat)[ncol(dat)] <- injNames[i]
+}
+
 
 #calander year 2007 until "2015-11-26", it would be a period LT with a long period####
+#last exit on "2015-12-01"
 #all cause
 asmr.all <- pyears(Surv(time=time0, time2 = timex, event = fail0) ~ age, data=dat, scale = 1)
 #summary(asmr.all, rate = T, ci.r = T)
@@ -111,3 +122,63 @@ if(creation) write.csv(decom.Men.Pos.Neg, paste("~/OneDrive/Summer Project/outpu
 #sum(decom.Men.Pos.Neg$ndeltax.i)
 decom.Men.Unk.Neg <- decom(allcause.A=asmr.all.Men.Unknown,allcause.B =  asmr.all.Men.Negative, i_cause.A = asmr.inj.Men.Unknown,i_cause.B =  asmr.inj.Men.Negative, ageint=1)
 if(creation) write.csv(decom.Men.Unk.Neg, paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_decom_Men_Unk_Neg.csv",sep = ""))
+
+
+#lapply this
+#pyears(Surv(time=time0, time2 = timex, event = fail2) ~ agegrp, data=dat, scale = 1)$event
+#lapply(injNames,function(x){x})
+# injEventList <- lapply(injNames,function(x){
+#   pyears(Surv(time=time0, time2 = timex, event = dat[,which(colnames(dat)==x)]) ~ agegrp, data=dat, scale = 1)$event
+# })
+
+#Women
+datL <- dat[which(dat$sex=="Women" & dat$allFixed=="Positive"),]
+injEventList.Women.Positive <- lapply(injNames,function(x){
+  pyears(Surv(time=time0, time2 = timex, event = datL[,which(colnames(datL)==x)]) ~ agegrp, data=datL, scale = 1)$event
+})
+
+datL <- dat[which(dat$sex=="Women" & dat$allFixed=="Negative"),]
+injEventList.Women.Negative <- lapply(injNames,function(x){
+  pyears(Surv(time=time0, time2 = timex, event = datL[,which(colnames(datL)==x)]) ~ agegrp, data=datL, scale = 1)$event
+})
+
+datL <- dat[which(dat$sex=="Women" & dat$allFixed=="Unknown"),]
+injEventList.Women.Unknown <- lapply(injNames,function(x){
+  pyears(Surv(time=time0, time2 = timex, event = datL[,which(colnames(datL)==x)]) ~ agegrp, data=datL, scale = 1)$event
+})
+
+#Men
+datL <- dat[which(dat$sex=="Men" & dat$allFixed=="Positive"),]
+injEventList.Men.Positive <- lapply(injNames,function(x){
+  pyears(Surv(time=time0, time2 = timex, event = datL[,which(colnames(datL)==x)]) ~ agegrp, data=datL, scale = 1)$event
+})
+
+datL <- dat[which(dat$sex=="Men" & dat$allFixed=="Negative"),]
+injEventList.Men.Negative <- lapply(injNames,function(x){
+  pyears(Surv(time=time0, time2 = timex, event = datL[,which(colnames(datL)==x)]) ~ agegrp, data=datL, scale = 1)$event
+})
+
+datL <- dat[which(dat$sex=="Men" & dat$allFixed=="Unknown"),]
+injEventList.Men.Unknown <- lapply(injNames,function(x){
+  pyears(Surv(time=time0, time2 = timex, event = datL[,which(colnames(datL)==x)]) ~ agegrp, data=datL, scale = 1)$event
+})
+
+#Women
+decomList.Women.Positive.Negative <- decomList(allcause.A = asmr.all.Women.Positive, allcause.B = asmr.all.Women.Negative, i_cause.A=injEventList.Women.Positive, i_cause.B = injEventList.Women.Negative, ageint = 5)
+colnames(decomList.Women.Positive.Negative) <- c(colnames(decomList.Women.Positive.Negative)[1:7],injNames)
+#decomList.Women.Positive.Negative
+if(creation) write.csv(decomList.Women.Positive.Negative, paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_decomList_Women_Positive_Negative.csv",sep = ""))
+
+decomList.Women.Unknown.Negative <- decomList(allcause.A = asmr.all.Women.Unknown, allcause.B = asmr.all.Women.Negative, i_cause.A=injEventList.Women.Unknown, i_cause.B = injEventList.Women.Negative, ageint = 5)
+colnames(decomList.Women.Unknown.Negative) <- c(colnames(decomList.Women.Unknown.Negative)[1:7],injNames)
+if(creation) write.csv(decomList.Women.Unknown.Negative, paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_decomList_Women_Unknown_Negative.csv",sep = ""))
+
+#Men
+decomList.Men.Positive.Negative <- decomList(allcause.A = asmr.all.Men.Positive, allcause.B = asmr.all.Men.Negative, i_cause.A=injEventList.Men.Positive, i_cause.B = injEventList.Men.Negative, ageint = 5)
+colnames(decomList.Men.Positive.Negative) <- c(colnames(decomList.Men.Positive.Negative)[1:7],injNames)
+#decomList.Men.Positive.Negative
+if(creation) write.csv(decomList.Men.Positive.Negative, paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_decomList_Men_Positive_Negative.csv",sep = ""))
+
+decomList.Men.Unknown.Negative <- decomList(allcause.A = asmr.all.Men.Unknown, allcause.B = asmr.all.Men.Negative, i_cause.A=injEventList.Men.Unknown, i_cause.B = injEventList.Men.Negative, ageint = 5)
+colnames(decomList.Men.Unknown.Negative) <- c(colnames(decomList.Men.Unknown.Negative)[1:7],injNames)
+if(creation) write.csv(decomList.Men.Unknown.Negative, paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_decomList_Men_Unknown_Negative.csv",sep = ""))

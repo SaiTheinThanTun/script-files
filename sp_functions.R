@@ -119,8 +119,8 @@ asdt <- function(allcause, i_cause, ageint, deletion=TRUE){
 
 #asdt(allcause = lt.all, i_cause = lt.ext, ageint = 1)
 
-#function for associated single decrement life table (ASDT) and cause deleted life table 
-decom <- function(allcause.A, i_cause.A, allcause.B, i_cause.B, ageint){
+#function for associated single decrement life table (ASDT) and cause deleted life table#### 
+decom <- function(allcause.A, allcause.B, i_cause.A, i_cause.B, ageint){
   #decompose by age and cause
   #data needed: LT of 2 groups eg. HIV+ & -, their all cause mortality and # of i cause deaths
   #allcause and i_cause are dataframe resulted from `lt` function
@@ -165,6 +165,57 @@ decom <- function(allcause.A, i_cause.A, allcause.B, i_cause.B, ageint){
   y
 }
 
+#function for associated single decrement life table (ASDT) and cause deleted life table, for a list of death events#### 
+decomList <- function(allcause.A, allcause.B, i_cause.A, i_cause.B, ageint){
+  #decompose by age and cause
+  #data needed: LT of 2 groups eg. HIV+ & -, their all cause mortality and # of i cause deaths
+  #allcause are dataframe resulted from `lt` function
+  #i_cause are 'list' of no. of death events in a population (there will be multiple dataset from each injury cause)
+  #ageint defines age interval
+  tableNames <- c('Person-years','Event', 'Rate', 'nqx', 'npx', 'lx', 'ndx', 'nLx', 'Tx', 'ex')
+  
+  #check if the dateset input are correct
+  if(sum(colnames(allcause.A) %in% tableNames)!=length(tableNames)) stop("allcause.A dataset incorrect")
+  if(sum(colnames(allcause.B) %in% tableNames)!=length(tableNames)) stop("allcause.B dataset incorrect")
+  if(length(i_cause.A)!=length(i_cause.B)) stop("i_cause.A and i_cause.B have different length")
+  
+  #subsetting only necessary sections
+  allcause.A <- allcause.A[,which(colnames(allcause.A) %in% tableNames)]
+  allcause.B <- allcause.B[,which(colnames(allcause.B) %in% tableNames)]
+  
+  lx.A <- allcause.A$lx
+  nLx.A <- allcause.A$nLx
+  Tx.A <- allcause.A$Tx
+  
+  lx.B <- allcause.B$lx
+  nLx.B <- allcause.B$nLx
+  Tx.B <- allcause.B$Tx
+  
+  nmx.A <- allcause.A$Rate
+  nmx.B <- allcause.B$Rate
+  
+  ndeltax <- NA
+  for(i in 1:length(allcause.A$Event)){
+    if(i<length(allcause.A$Event)){
+      ndeltax[i] <- ((lx.A[i]/lx.A[1])*((nLx.B[i]/lx.B[i])-(nLx.A[i]/lx.A[i]))) + ((Tx.B[i+1]/lx.A[1])*((lx.A[i]/lx.B[i])-(lx.A[i+1]/lx.B[i+1])))
+    }
+    else ndeltax[i] <- (lx.A[i]/lx.A[1])*((nLx.B[i]/lx.B[i])-(nLx.A[i]/lx.A[i]))
+  }
+  y <- as.data.frame(cbind(lx.A, nLx.A, Tx.A, lx.B, nLx.B, Tx.B, ndeltax))
+  row.names(y) <- row.names(allcause.A)
+  
+  for(j in 1:length(i_cause.A)){
+    i_cause.A.event <- i_cause.A[[j]]
+    i_cause.B.event <- i_cause.B[[j]]
+    nRxi.A <- i_cause.A.event/allcause.A$Event
+    nRxi.B <- i_cause.B.event/allcause.B$Event
+    ndeltax.i <-ndeltax*(nRxi.B*nmx.B-nRxi.A*nmx.A)/(nmx.B-nmx.A)
+    y <- cbind(y,ndeltax.i)
+  }
+  y
+}
+
+
 #pyears, event rates and CI function####
 pyears2 <- function(x, per= 1){
   #x is a pyears object
@@ -178,5 +229,5 @@ pyears2 <- function(x, per= 1){
   y
 }
 
-allFixed.rate <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ allFixed, data=dat, scale = 1)
-pyears2(allFixed.rate, per = 10000)
+# allFixed.rate <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ allFixed, data=dat, scale = 1)
+# pyears2(allFixed.rate, per = 10000)
