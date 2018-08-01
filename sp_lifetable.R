@@ -18,7 +18,7 @@ for(i in 1: length(injNames)){
   dat <- cbind(dat,x)
   colnames(dat)[ncol(dat)] <- injNames[i]
 }
-
+#1271372      57
 
 #calander year 2007 until "2015-11-26", it would be a period LT with a long period####
 #last exit on "2015-12-01"

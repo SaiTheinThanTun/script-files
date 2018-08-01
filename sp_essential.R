@@ -214,6 +214,13 @@ table(datL$`_d`, datL$va, exclude = NULL) #12 are not dead but have VA!!!
 names(dat)[names(dat)=="_t0"] <- "time0"
 names(dat)[names(dat)=="_t"] <- "timex"
 names(dat)[names(dat)=="_d"] <- "fail0" 
+
+#new variable for period #before dim(dat) is 1271372      45
+dat$period.2011_15 <- dat$entry>="2011-01-01"
+
+#summary(dat[dat$period.2011_15==TRUE,]$entry)
+#summary(dat[dat$period.2011_15==FALSE,]$entry)
+
 #fail definitions
 #STATA defined death, 'failure' is the variable STATA used for this. there's also 'fail' which is not used
 #fail2 is external injury related death
