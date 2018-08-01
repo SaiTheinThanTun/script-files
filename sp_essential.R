@@ -217,7 +217,9 @@ names(dat)[names(dat)=="_d"] <- "fail0"
 
 #new variable for period #before dim(dat) is 1271372      45
 dat$period.2011_15 <- dat$entry>="2011-01-01"
-
+dat$agegrp15 <- cut(dat$age, c(15,30,45,60, 122), include.lowest = T, right = F)
+with(dat,table(agegrp15, agegrp))
+levels(dat$agegrp15) <- c("15-29","30-44", "45-59","60+")
 #summary(dat[dat$period.2011_15==TRUE,]$entry)
 #summary(dat[dat$period.2011_15==FALSE,]$entry)
 
@@ -356,6 +358,20 @@ allFixed.rate <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ allFixe
 allFixed.rate <- pyears2(allFixed.rate, per = 10000)
 if(creation) write.csv(allFixed.rate,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_allFixed_rate.csv",sep = "") )
 
+#no. of injury deaths against period for each sex####
+#Men
+dat.Men.inj <- dat[dat$sex=='Men' & dat$fail2==1,] #618 58
+dat.Men.inj <- droplevels(dat.Men.inj)
+dat.Men.inj.Tab <- table(dat.Men.inj$COD, dat.Men.inj$period.2011_15)
+colnames(dat.Men.inj.Tab) <- c("2007-2010", "2011-2015")
+
+#Women
+dat.Women.inj <- dat[dat$sex=='Women' & dat$fail2==1,] #155 58
+dat.Women.inj <- droplevels(dat.Women.inj)
+dat.Women.inj.Tab <- table(dat.Women.inj$COD, dat.Women.inj$period.2011_15)
+colnames(dat.Women.inj.Tab) <- c("2007-2010", "2011-2015")
+dat.inj.tab <- cbind(dat.Women.inj.Tab, dat.Men.inj.Tab)
+if(creation) write.csv(dat.inj.tab,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_inj_x_period.csv",sep = ""))
 }
 
 #py_agegrp_extInj <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ agegrp, data=dat, scale = 1)
