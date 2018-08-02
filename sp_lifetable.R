@@ -106,7 +106,7 @@ e15.increase <- cbind(Women.e15.increase, Men.e15.increase)
 if(creation) write.csv(e15.increase, paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_e15_increase.csv",sep = ""))
 
 
-#e15 gain, comparison within itself in HIV group and within 15 year agegrp interval####
+#e15 gain, comparison within itself in HIV group and between 2007-10 & 2011-15####
 #hivstatus allFixed has beeen used
 
 #_del_2007####
@@ -253,8 +253,73 @@ e15.increase <- cbind(Women.e15.s, Women.e15.a, Women.e15.increase, Men.e15.s, M
 if(creation) write.csv(e15.increase, paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_e15_increase_2011.csv",sep = ""))
 
 
+#dat <- dat.original #restoring the dat
+
+#e15 gain, comparison within sex and and between 2007-10 & 2011-15####
+#hivstatus allFixed has beeen used
+
+#_del_2007####
+#dat.original <- dat
+dat <- dat.original[dat.original$period.2011_15==FALSE,]
+#Women
+dat.Women <- dat[dat$sex=='Women',]
+asmr.all.Women <- lt(pyears(Surv(time=time0, time2 = timex, event = fail0) ~ agegrp, data=dat.Women, scale = 1), ageint = 5)
+asmr.inj.Women <- lt(pyears(Surv(time=time0, time2 = timex, event = fail2) ~ agegrp, data=dat.Women, scale = 1), ageint = 5)
+
+asdt.inj.Women.del <- asdt(allcause = asmr.all.Women, i_cause = asmr.inj.Women, ageint = 5)
+if(creation) write.csv(asdt.inj.Women.del,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_asdt_inj_Women_del_2007.csv",sep = ""))
+Women <- asdt.inj.Women.del$s_ex[1]-asdt.inj.Women.del$ex[1] 
+Women.s <- asdt.inj.Women.del$s_ex[1]
+Women.a <- asdt.inj.Women.del$ex[1]
+Women
+
+#Men
+dat.Men <- dat[dat$sex=='Men',]
+asmr.all.Men <- lt(pyears(Surv(time=time0, time2 = timex, event = fail0) ~ agegrp, data=dat.Men, scale = 1), ageint = 5)
+asmr.inj.Men <- lt(pyears(Surv(time=time0, time2 = timex, event = fail2) ~ agegrp, data=dat.Men, scale = 1), ageint = 5)
+
+asdt.inj.Men.del <- asdt(allcause = asmr.all.Men, i_cause = asmr.inj.Men, ageint = 5)
+if(creation) write.csv(asdt.inj.Men.del,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_asdt_inj_Men_del_2007.csv",sep = ""))
+Men <- asdt.inj.Men.del$s_ex[1]-asdt.inj.Men.del$ex[1] 
+Men.s <- asdt.inj.Men.del$s_ex[1]
+Men.a <- asdt.inj.Men.del$ex[1]
+Men 
+
+e15.increase.sex <- cbind(Women.s, Women.a, Women, Men.s, Men.a, Men)
+if(creation) write.csv(e15.increase.sex, paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_e15_increase_2007_sex.csv",sep = ""))
+
+#_del_2011####
+dat <- dat.original[dat.original$period.2011_15==TRUE,]
+#Women
+dat.Women <- dat[dat$sex=='Women',]
+asmr.all.Women <- lt(pyears(Surv(time=time0, time2 = timex, event = fail0) ~ agegrp, data=dat.Women, scale = 1), ageint = 5)
+asmr.inj.Women <- lt(pyears(Surv(time=time0, time2 = timex, event = fail2) ~ agegrp, data=dat.Women, scale = 1), ageint = 5)
+
+asdt.inj.Women.del <- asdt(allcause = asmr.all.Women, i_cause = asmr.inj.Women, ageint = 5)
+if(creation) write.csv(asdt.inj.Women.del,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_asdt_inj_Women_del_2011.csv",sep = ""))
+Women <- asdt.inj.Women.del$s_ex[1]-asdt.inj.Women.del$ex[1] 
+Women.s <- asdt.inj.Women.del$s_ex[1]
+Women.a <- asdt.inj.Women.del$ex[1]
+Women
+
+#Men
+dat.Men <- dat[dat$sex=='Men',]
+asmr.all.Men <- lt(pyears(Surv(time=time0, time2 = timex, event = fail0) ~ agegrp, data=dat.Men, scale = 1), ageint = 5)
+asmr.inj.Men <- lt(pyears(Surv(time=time0, time2 = timex, event = fail2) ~ agegrp, data=dat.Men, scale = 1), ageint = 5)
+
+asdt.inj.Men.del <- asdt(allcause = asmr.all.Men, i_cause = asmr.inj.Men, ageint = 5)
+if(creation) write.csv(asdt.inj.Men.del,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_asdt_inj_Men_del_2011.csv",sep = ""))
+Men <- asdt.inj.Men.del$s_ex[1]-asdt.inj.Men.del$ex[1] 
+Men.s <- asdt.inj.Men.del$s_ex[1]
+Men.a <- asdt.inj.Men.del$ex[1]
+Men 
+
+e15.increase.sex <- cbind(Women.s, Women.a, Women, Men.s, Men.a, Men)
+if(creation) write.csv(e15.increase.sex, paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_e15_increase_2011_sex.csv",sep = ""))
+
+
 dat <- dat.original #restoring the dat
-#Decomposition by age, sex and CoD from injury####
+#Decomposition by age, sex and CoD from injury. By period is in sp_decomposition.R####
 #Women
 decom.Women.Pos.Neg <- decom(allcause.A=asmr.all.Women.Positive,allcause.B =  asmr.all.Women.Negative, i_cause.A = asmr.inj.Women.Positive,i_cause.B =  asmr.inj.Women.Negative, ageint=1)
 if(creation) write.csv(decom.Women.Pos.Neg, paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_decom_Women_Pos_Neg.csv",sep = ""))
@@ -279,7 +344,7 @@ if(creation) write.csv(decom.Men.Unk.Neg, paste("~/OneDrive/Summer Project/outpu
 # injEventList <- lapply(injNames,function(x){
 #   pyears(Surv(time=time0, time2 = timex, event = dat[,which(colnames(dat)==x)]) ~ agegrp, data=dat, scale = 1)$event
 # })
-#DECOMPOSITION BY AGE, SEX, HIV STATUS AND EACH INJURY COD####
+#DECOMPOSITION BY AGE, SEX, HIV STATUS AND EACH INJURY COD. By period is in sp_decomposition.R####
 #Women
 datL <- dat[which(dat$sex=="Women" & dat$allFixed=="Positive"),]
 injEventList.Women.Positive <- lapply(injNames,function(x){
