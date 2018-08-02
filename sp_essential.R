@@ -14,6 +14,8 @@ library(survival)
 library(survminer)
 library(Epi)
 library(popEpi)
+library(ggplot2)
+library(data.table)
 source('~/OneDrive/Summer Project/script-files/sp_functions.R')
 
 setwd("~/OneDrive/Summer Project/data/")
@@ -236,6 +238,8 @@ if(FALSE){
 per <- 10000
 
 no.individuals <- table(datL$agegrp,datL$sex,  exclude = NULL)
+no.individuals.hiv <- table(datL$allFixed,  exclude = NULL)
+if(creation) write.csv(no.individuals.hiv,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_numberPerHIV.csv",sep = ""))
 datLf <- datL[datL$sex=="Women",]
 datLm <- datL[datL$sex=="Men",]
 # A <- <- table(datL$agegrp,datL$sex,  exclude = NULL)
@@ -353,10 +357,25 @@ seroconFixed.rate <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ ser
 seroconFixed.rate <- pyears2(seroconFixed.rate, per = 10000)
 if(creation) write.csv(seroconFixed.rate,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_seroconFixed_rate.csv",sep = "") )
 
-#neg for 5 years + all fixed
+#neg for 5 years + all fixed, final description####
+#inj cause
 allFixed.rate <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ allFixed, data=dat, scale = 1)
 allFixed.rate <- pyears2(allFixed.rate, per = 10000)
 if(creation) write.csv(allFixed.rate,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_allFixed_rate.csv",sep = "") )
+#all cause
+allFixed.allcause.rate <- pyears(Surv(time=time0, time2 = timex, event = fail0) ~ allFixed, data=dat, scale = 1)
+allFixed.allcause.rate <- pyears2(allFixed.allcause.rate, per = 10000)
+if(creation) write.csv(allFixed.allcause.rate,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_allFixed_allcause_rate.csv",sep = "") )
+
+#overall (the whole population) rates####
+#all cause
+allcause.rate <- pyears(Surv(time=time0, time2 = timex, event = fail0) ~ 1, data=dat, scale = 1)
+allcause.rate <- pyears2(allcause.rate, per = 10000)
+if(creation) write.csv(allcause.rate,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_allcause_rate.csv",sep = "") )
+#injury cause
+inj.cause.rate <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ 1, data=dat, scale = 1)
+inj.cause.rate <- pyears2(inj.cause.rate, per = 10000)
+if(creation) write.csv(inj.cause.rate,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_inj_cause_rate.csv",sep = "") )
 
 #no. of injury deaths against period for each sex####
 #Men
@@ -372,6 +391,24 @@ dat.Women.inj.Tab <- table(dat.Women.inj$COD, dat.Women.inj$period.2011_15)
 colnames(dat.Women.inj.Tab) <- c("2007-2010", "2011-2015")
 dat.inj.tab <- cbind(dat.Women.inj.Tab, dat.Men.inj.Tab)
 if(creation) write.csv(dat.inj.tab,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_inj_x_period.csv",sep = ""))
+
+#no. of injury deaths against hiv status, allFixed####
+dat.inj <- dat[dat$fail2==1,]
+dat.inj <- droplevels(dat.inj)
+dat.inj$period.2011_15 <- as.factor(dat.inj$period.2011_15)
+levels(dat.inj$period.2011_15) <- c("2007-10", "2011-15")
+inj_x_hiv <- table(dat.inj$COD, dat.inj$allFixed, dat.inj$period.2011_15)
+inj_x_hiv.m <- melt(inj_x_hiv, c("COD","allFixed","period.2011_15"))
+
+# Stacked Percent
+png(paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_inj_x_hiv_period.png",sep = ""), width = 800, height = 900)
+ggplot(inj_x_hiv.m, aes(fill=COD, y=value, x=allFixed)) +
+  facet_grid(. ~ period.2011_15)+
+  geom_bar( stat="identity", position="fill") +
+  xlab("HIV status")+ylab("Proportion among injury-related deaths in each group")+
+  scale_fill_discrete(name = "Deaths from external injury")+
+  theme(text = element_text(size=16))
+dev.off()
 }
 
 #py_agegrp_extInj <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ agegrp, data=dat, scale = 1)
@@ -559,6 +596,19 @@ if(FALSE){
   final_results <- matrix(unlist(results),length(testOClist),3*3, byrow=T)
   
 }
+
+#cox regression revisited####
+ars.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ allFixed+age+factor(residence)+factor(sex), data=dat) 
+summary(ars.svcox)
+ars.ph <- cox.zph(ars.svcox)
+ars.ph
+plot(ars.ph)
+
+arsp.cox <- coxph(Surv(time=timex-time0, event = fail2) ~ allFixed+age+factor(residence)+factor(sex)+factor(period.2011_15), data=dat) 
+summary(arsp.cox)
+arsp.cox.ph <- cox.zph(arsp.cox)
+arsp.cox.ph
+
 
 #lexis
 if(FALSE){
