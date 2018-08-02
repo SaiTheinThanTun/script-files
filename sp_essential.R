@@ -269,7 +269,7 @@ pyae.f.rate <- pyae.f.event/pyae.f.py
 pyae.f.lo <- exp(log(pyae.f.rate)-(1.96/sqrt(pyae.f.event)))
 pyae.f.hi <- exp(log(pyae.f.rate)+(1.96/sqrt(pyae.f.event)))
 
-f.dist <- cbind(no.individuals[,2],round(pyaa.f.py),pyaa.f.event,round(pyaa.f.rate*per,2),round(pyaa.f.lo*per,2),round(pyaa.f.hi*per,2),pyae.f.event,round(pyae.f.rate*per,2),round(pyae.f.lo*per,2),round(pyae.f.hi*per,2))
+f.dist <- cbind(no.individuals[,2],round(pyaa.f.py),pyaa.f.event,round(pyaa.f.rate*per,1),round(pyaa.f.lo*per,1),round(pyaa.f.hi*per,1),pyae.f.event,round(pyae.f.rate*per,1),round(pyae.f.lo*per,1),round(pyae.f.hi*per,1))
 
 tot.indi <- sum(no.individuals[,2])
 tot.pyaa.f.py <- sum(pyaa.f.py)
@@ -282,7 +282,7 @@ tot.pyae.f.event <- sum(pyae.f.event)
 tot.pyae.f.rate <- tot.pyae.f.event/tot.pyae.f.py
 tot.pyae.f.lo <- exp(log(tot.pyae.f.rate)-(1.96/sqrt(tot.pyae.f.event)))
 tot.pyae.f.hi <- exp(log(tot.pyae.f.rate)+(1.96/sqrt(tot.pyae.f.event)))
-Total <- c(tot.indi,round(tot.pyaa.f.py),tot.pyaa.f.event,round(tot.pyaa.f.rate*per,2),round(tot.pyaa.f.lo*per,2),round(tot.pyaa.f.hi*per,2),tot.pyae.f.event,round(tot.pyae.f.rate*per,2),round(tot.pyae.f.lo*per,2),round(tot.pyae.f.hi*per,2))
+Total <- c(tot.indi,round(tot.pyaa.f.py),tot.pyaa.f.event,round(tot.pyaa.f.rate*per,1),round(tot.pyaa.f.lo*per,1),round(tot.pyaa.f.hi*per,1),tot.pyae.f.event,round(tot.pyae.f.rate*per,1),round(tot.pyae.f.lo*per,1),round(tot.pyae.f.hi*per,1))
 
 f.dist <- rbind(f.dist, Total)
 colnames(f.dist) <- desTableNames
@@ -312,7 +312,7 @@ pyae.m.rate <- pyae.m.event/pyae.m.py
 pyae.m.lo <- exp(log(pyae.m.rate)-(1.96/sqrt(pyae.m.event)))
 pyae.m.hi <- exp(log(pyae.m.rate)+(1.96/sqrt(pyae.m.event)))
 
-m.dist <- cbind(no.individuals[,1],round(pyaa.m.py),pyaa.m.event,round(pyaa.m.rate*per,2),round(pyaa.m.lo*per,2),round(pyaa.m.hi*per,2),pyae.m.event,round(pyae.m.rate*per,2),round(pyae.m.lo*per,2),round(pyae.m.hi*per,2))
+m.dist <- cbind(no.individuals[,1],round(pyaa.m.py),pyaa.m.event,round(pyaa.m.rate*per,1),round(pyaa.m.lo*per,1),round(pyaa.m.hi*per,1),pyae.m.event,round(pyae.m.rate*per,1),round(pyae.m.lo*per,1),round(pyae.m.hi*per,1))
 
 tot.indi <- sum(no.individuals[,1])
 tot.pyaa.m.py <- sum(pyaa.m.py)
@@ -325,7 +325,7 @@ tot.pyae.m.event <- sum(pyae.m.event)
 tot.pyae.m.rate <- tot.pyae.m.event/tot.pyae.m.py
 tot.pyae.m.lo <- exp(log(tot.pyae.m.rate)-(1.96/sqrt(tot.pyae.m.event)))
 tot.pyae.m.hi <- exp(log(tot.pyae.m.rate)+(1.96/sqrt(tot.pyae.m.event)))
-Total <- c(tot.indi,round(tot.pyaa.m.py),tot.pyaa.m.event,round(tot.pyaa.m.rate*per,2),round(tot.pyaa.m.lo*per,2),round(tot.pyaa.m.hi*per,2),tot.pyae.m.event,round(tot.pyae.m.rate*per,2),round(tot.pyae.m.lo*per,2),round(tot.pyae.m.hi*per,2))
+Total <- c(tot.indi,round(tot.pyaa.m.py),tot.pyaa.m.event,round(tot.pyaa.m.rate*per,1),round(tot.pyaa.m.lo*per,1),round(tot.pyaa.m.hi*per,1),tot.pyae.m.event,round(tot.pyae.m.rate*per,1),round(tot.pyae.m.lo*per,1),round(tot.pyae.m.hi*per,1))
 
 m.dist <- rbind(m.dist, Total)
 colnames(m.dist) <- desTableNames
@@ -361,11 +361,11 @@ if(creation) write.csv(seroconFixed.rate,paste("~/OneDrive/Summer Project/output
 #inj cause
 allFixed.rate <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ allFixed, data=dat, scale = 1)
 allFixed.rate <- pyears2(allFixed.rate, per = 10000)
-if(creation) write.csv(allFixed.rate,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_allFixed_rate.csv",sep = "") )
+if(creation) write.csv(round(allFixed.rate,1),paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_allFixed_rate.csv",sep = "") )
 #all cause
 allFixed.allcause.rate <- pyears(Surv(time=time0, time2 = timex, event = fail0) ~ allFixed, data=dat, scale = 1)
 allFixed.allcause.rate <- pyears2(allFixed.allcause.rate, per = 10000)
-if(creation) write.csv(allFixed.allcause.rate,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_allFixed_allcause_rate.csv",sep = "") )
+if(creation) write.csv(round(allFixed.allcause.rate,1),paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_allFixed_allcause_rate.csv",sep = "") )
 
 #overall (the whole population) rates####
 #all cause
