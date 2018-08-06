@@ -447,7 +447,7 @@ for(i in 1:length(testOClist)){
   dev.off()
 }
 
-#by hivstatus exposure, stratified by sex
+#by hivstatus exposure, stratified by sex, #reported
 png(paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_injuryCause_Women.png",sep = ""), width = 800, height = 600)
 sv2 <- survfit(Surv(time=time0, time2 = timex, event = fail2) ~ allFixed, data=dat[dat$sex=='Women',]) #Deaths due to injuries alone: fail2
 plot(sv2, conf.int=FALSE, mark.time=FALSE, col=1:3, ymin = .8, main=paste("allFixed", ", external injury, Women", sep = "")) #by HIV status
@@ -459,6 +459,28 @@ sv2 <- survfit(Surv(time=time0, time2 = timex, event = fail2) ~ allFixed, data=d
 plot(sv2, conf.int=FALSE, mark.time=FALSE, col=1:3, ymin = .8, main=paste("allFixed", ", external injury, Men", sep = "")) #by HIV status
 legend('bottomleft',legend = c('neg','pos','unk'), col=1:3, lty=1)
 dev.off()
+
+#4x survival curve, #reported####
+
+png(paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_survivalcurve_report.png",sep = ""), width = 1000, height = 1100)
+par(mfrow=c(2,2))
+sv2 <- survfit(Surv(time=time0, time2 = timex, event = fail0) ~ allFixed, data=dat[dat$sex=='Women',], type="kaplan-meier") #Deaths due to all
+plot(sv2, conf.int=FALSE, mark.time=FALSE, col=1:3, ymin = .8, main="Survival from any cause of death, \nWomen", xlab = "Age", ylab = "Estimates of survival function") #by HIV status
+legend(title='HIV status','bottomleft',legend = c('Negative','Positive','Unknown'), col=1:3, lty=1)
+
+sv2 <- survfit(Surv(time=time0, time2 = timex, event = fail0) ~ allFixed, data=dat[dat$sex=='Men',], type="kaplan-meier") #Deaths due to all
+plot(sv2, conf.int=FALSE, mark.time=FALSE, col=1:3, ymin = .8, main="Survival from any cause of death, \nMen", xlab = "Age", ylab = "Estimates of survival function") #by HIV status
+legend(title='HIV status','bottomleft',legend = c('Negative','Positive','Unknown'), col=1:3, lty=1)
+
+sv2 <- survfit(Surv(time=time0, time2 = timex, event = fail2) ~ allFixed, data=dat[dat$sex=='Women',], type="kaplan-meier") #Deaths due to injuries alone: fail2
+plot(sv2, conf.int=FALSE, mark.time=FALSE, col=1:3, ymin = .75, main="Survival from deaths related to \nexternal injury, Women", xlab = "Age", ylab = "Estimates of survival function") #by HIV status
+legend(title='HIV status','bottomleft',legend = c('Negative','Positive','Unknown'), col=1:3, lty=1)
+
+sv2 <- survfit(Surv(time=time0, time2 = timex, event = fail2) ~ allFixed, data=dat[dat$sex=='Men',], type="kaplan-meier") #Deaths due to injuries alone: fail2
+plot(sv2, conf.int=FALSE, mark.time=FALSE, col=1:3, ymin = .75, main="Survival from deaths related to \nexternal injury, Men", xlab = "Age", ylab = "Estimates of survival function") #by HIV status
+legend(title='HIV status','bottomleft',legend = c('Negative','Positive','Unknown'), col=1:3, lty=1)
+dev.off()
+par(mfrow=c(1,1))
 
 ###COX REGRESSION####
 #!!need to check proportionality of hazards
@@ -605,6 +627,27 @@ ars.ph
 plot(ars.ph)
 
 arsp.cox <- coxph(Surv(time=timex-time0, event = fail2) ~ allFixed+age+factor(residence)+factor(sex)+factor(period.2011_15), data=dat) 
+summary(arsp.cox)
+arsp.cox.ph <- cox.zph(arsp.cox)
+arsp.cox.ph
+
+#conceptual framework####
+#univariate analyses
+#H0: Injury related mortality increases in male
+summary(coxph(Surv(time=timex-time0, event = fail2) ~ factor(sex), data=dat)) #factor(sex)Women -1.52823   0.21692  0.08983 -17.01   <2e-16 ***
+
+#H0: Injury related mortality increases in older age
+summary(coxph(Surv(time=timex-time0, event = fail2) ~ factor(agegrp15), data=dat)) #factor(agegrp15)60+    0.49491   1.64035  0.11403  4.340 1.42e-05 ***
+
+#H0: Injury related mortality is lower in 2011-15 because of improved care and living standard
+summary(coxph(Surv(time=timex-time0, event = fail2) ~ factor(period.2011_15), data=dat)) #factor(period.2011_15)TRUE -0.24661   0.78145  0.07196 -3.427 0.000611 ***
+
+
+#cox regression, reported####
+crude.cox <- coxph(Surv(time=timex-time0, event = fail2) ~ allFixed, data=dat) 
+summary(crude.cox)
+
+arsp.cox <- coxph(Surv(time=timex-time0, event = fail2) ~ allFixed+factor(agegrp15)+factor(residence)+factor(sex)+factor(period.2011_15), data=dat) 
 summary(arsp.cox)
 arsp.cox.ph <- cox.zph(arsp.cox)
 arsp.cox.ph
