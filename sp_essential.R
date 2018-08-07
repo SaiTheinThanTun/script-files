@@ -487,9 +487,10 @@ par(mfrow=c(1,1))
 #basic
 #svcox <- coxph(Surv(time=time0, time2 = timex, event = fail2) ~ factor(hivstale5y), data=dat) 
 #summary(svcox)
+testOClist <- c("hivstatus_broad","hivstale5y", "missingFixed", "seroconFixed", "allFixed")
 testOC <- testOClist[5] #c("hivstatus_broad","hivstale5y", "missingFixed", "seroconFixed", "allFixed")
 svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(dat[,which(names(dat) %in% testOC)]), data=dat) 
-summary(svcox)
+summary(svcox) #Positive     1.022     0.9788    0.8151     1.281
 base.ph <- cox.zph(svcox)
 base.ph
 plot(base.ph) #TEST PROPORTIONALITY
@@ -502,11 +503,11 @@ po_con <- c('sex','age','residence')
 #? hivevertreat???
 # NA assumed to be Unknown
 
-#basic+res *
+#basic+res
 #res.svcox <- coxph(Surv(time=time0, time2 = timex, event = fail2) ~ hivstale5y+residence, data=dat) 
 #summary(res.svcox)
 res.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(dat[,which(names(dat) %in% testOC)])+factor(residence), data=dat) 
-summary(res.svcox)
+summary(res.svcox) #Positive     1.112     0.8996    0.8606     1.436
 res.ph <- cox.zph(res.svcox)
 res.ph
 plot(res.ph) #TEST PROPORTIONALITY
@@ -515,34 +516,82 @@ plot(res.ph) #TEST PROPORTIONALITY
 #sex.svcox <- coxph(Surv(time=time0, time2 = timex, event = fail2) ~ hivstale5y+sex, data=dat) 
 #summary(sex.svcox)
 sex.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(dat[,which(names(dat) %in% testOC)])+factor(sex), data=dat) 
-summary(sex.svcox)
+summary(sex.svcox) #Positive    1.3333      0.750    1.0621    1.6737
 sex.ph <- cox.zph(sex.svcox)
 sex.ph
 plot(sex.ph) #TEST PROPORTIONALITY
 
-#basic+age *?
+#basic+age 
 #age.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(hivstale5y)+factor(agegrp), data=dat) #error
 age.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(dat[,which(names(dat) %in% testOC)])+age, data=dat)
-summary(age.svcox)
+summary(age.svcox) #Positive     1.048     0.9546    0.8353     1.314
 age.ph <- cox.zph(age.svcox)
 age.ph
 plot(age.ph) #TEST PROPORTIONALITY
 
+#basic+agegrp15
+age15.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(dat[,which(names(dat) %in% testOC)])+factor(agegrp15), data=dat)
+summary(age15.svcox) #Positive    1.0615     0.9420    0.8398     1.342
 
-#basic+age+sex
+#basic+period
+period.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(dat[,which(names(dat) %in% testOC)])+factor(period.2011_15), data=dat)
+summary(period.svcox) #Positive  0.04195   1.04285  0.11542  0.364  0.71623
+
+#basic+age+sex *
 as.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(dat[,which(names(dat) %in% testOC)])+age+factor(sex), data=dat) 
-summary(as.svcox)
+summary(as.svcox) #Positive    1.3070     0.7651    1.0419    1.6396
 as.ph <- cox.zph(as.svcox)
 as.ph
 plot(as.ph) #TEST PROPORTIONALITY
 
-#basic+age+res+sex
+#basic+age+res+sex **
 ars.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(dat[,which(names(dat) %in% testOC)])+age+factor(residence)+factor(sex), data=dat) 
-summary(ars.svcox)
+summary(ars.svcox) #Positive    1.4302     0.6992    1.1058    1.8499
 ars.ph <- cox.zph(ars.svcox)
 ars.ph
 plot(ars.ph) #TEST PROPORTIONALITY
 
+#basic+agegrp+res+sex *
+a15rs.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(dat[,which(names(dat) %in% testOC)])+factor(agegrp15)+factor(residence)+factor(sex), data=dat) 
+summary(a15rs.svcox) #Positive    1.4004     0.7141    1.0689     1.835
+
+#unadjusted, report
+svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ allFixed, data=dat) 
+summary(svcox)
+#basic+agegrp+res+sex+period ** report
+a15rsp.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ allFixed+factor(agegrp15)+factor(residence)+factor(sex)+factor(period.2011_15), data=dat) 
+summary(a15rsp.svcox) #Positive    1.4369     0.6959    1.0967    1.8826
+
+#basic+agegrp+res+sex+period+interaction ** period strata specific 
+a15rspi.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ allFixed+factor(agegrp15)+factor(residence)+factor(sex)+factor(period.2011_15)+allFixed:factor(period.2011_15), data=dat) 
+summary(a15rspi.svcox) #Positive   1.6619     0.6017    1.1501     2.401
+
+#stratam specific hazard ratios####
+pos2007 <- svycontrast(a15rspi.svcox,c("allFixedPositive"=1))
+pos2011 <- svycontrast(a15rspi.svcox,c("allFixedPositive"=1, "allFixedPositive:factor(period.2011_15)TRUE"=1))
+
+#pvalue for interaction: 0.272413
+pos2007ci <- c(exp(pos2007[1]),exp(pos2007-(1.96*.1878))[1],exp(pos2007+(1.96*.1878))[1], 0.272413) #1.661889 1.150121 2.401379 
+pos2011ci <- c(exp(pos2011[1]),exp(pos2011-(1.96*.1878))[1],exp(pos2011+(1.96*.1878))[1], NA) #1.2495098 0.8647311 1.8055031
+
+stra_spec <- rbind(pos2007ci,pos2011ci)
+colnames(stra_spec) <- c('HR','lower','upper','p-value')
+write.csv(stra_spec,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_periodStratum_spec.csv",sep = ""))
+
+
+#basic+agegrp+res+sex+period+interaction
+a15rsip.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ allFixed+factor(agegrp15)+factor(residence)+factor(sex)+factor(period.2011_15)+allFixed:factor(sex), data=dat) 
+summary(a15rsip.svcox) #Positive  1.5647     0.6391    1.1299    2.1668
+
+a15irsp.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ allFixed+factor(agegrp15)+factor(residence)+factor(sex)+factor(period.2011_15)+allFixed:factor(agegrp15), data=dat) 
+summary(a15irsp.svcox) #Positive     1.8999     0.5263    1.1869    3.0414
+
+a15risp.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ allFixed+factor(agegrp15)+factor(residence)+factor(sex)+factor(period.2011_15)+allFixed:factor(residence), data=dat) 
+summary(a15risp.svcox) #Positive   3.6109     0.2769   0.99050   13.1633
+
+#anova
+anova(a15rsp.svcox, a15rspi.svcox) #p .5109
+anova(a15rspi.svcox, a15rs.svcox)
 
 #producing RR (crude, partial, fully adj) and p values
 results <- list()
@@ -632,7 +681,7 @@ arsp.cox.ph <- cox.zph(arsp.cox)
 arsp.cox.ph
 
 #conceptual framework####
-#univariate analyses
+#univariate analyses, reported also in crude hazard ratios
 #H0: Injury related mortality increases in male
 summary(coxph(Surv(time=timex-time0, event = fail2) ~ factor(sex), data=dat)) #factor(sex)Women -1.52823   0.21692  0.08983 -17.01   <2e-16 ***
 
@@ -642,12 +691,35 @@ summary(coxph(Surv(time=timex-time0, event = fail2) ~ factor(agegrp15), data=dat
 #H0: Injury related mortality is lower in 2011-15 because of improved care and living standard
 summary(coxph(Surv(time=timex-time0, event = fail2) ~ factor(period.2011_15), data=dat)) #factor(period.2011_15)TRUE -0.24661   0.78145  0.07196 -3.427 0.000611 ***
 
+#H0: Injury related mortality decreases in people living in rural area
+summary(coxph(Surv(time=timex-time0, event = fail2) ~ factor(residence), data=dat)) #factor(residence)2 0.02143   1.02166  0.17342 0.124    0.902
+
+#H0: HIV prevalence differs between urban, semi-urban and rural area
+table(datL$allFixed, datL$residence)
+prop.table(table(datL$allFixed, datL$residence),2)
+chisq.test(datL$allFixed,datL$residence) #X-squared = 1230.4, df = 4, p-value < 2.2e-16
+#chisq.test(table(datL$allFixed, datL$residence)) #same as above
+
+#H0: HIV prevalence differs between sex
+table(datL$allFixed, datL$sex)
+prop.table(table(datL$allFixed, datL$sex),2)
+chisq.test(datL$allFixed,datL$sex) #X-squared = 3443.4, df = 2, p-value < 2.2e-16
+
+#H0: HIV prevalence differs by age
+table(datL$allFixed, datL$agegrp15)
+prop.table(table(datL$allFixed, datL$agegrp15),2)
+chisq.test(datL$allFixed,datL$agegrp15) #X-squared = 10038, df = 6, p-value < 2.2e-16
+
+#H0: HIV prevalence differs by follow up period
+table(datL$allFixed, datL$period.2011_15)
+prop.table(table(datL$allFixed, datL$period.2011_15),2)
+chisq.test(datL$allFixed,datL$period.2011_15) #X-squared = 727.4, df = 2, p-value < 2.2e-16
 
 #cox regression, reported####
 crude.cox <- coxph(Surv(time=timex-time0, event = fail2) ~ allFixed, data=dat) 
 summary(crude.cox)
 
-arsp.cox <- coxph(Surv(time=timex-time0, event = fail2) ~ allFixed+factor(agegrp15)+factor(residence)+factor(sex)+factor(period.2011_15), data=dat) 
+arsp.cox <- coxph(Surv(time=timex-time0, event = fail2) ~ allFixed+factor(sex)+factor(agegrp15)+factor(period.2011_15)+factor(residence), data=dat) 
 summary(arsp.cox)
 arsp.cox.ph <- cox.zph(arsp.cox)
 arsp.cox.ph

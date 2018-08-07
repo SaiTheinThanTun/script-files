@@ -121,13 +121,16 @@ HIV.decom <- cbind(HIV.decom, age, sex)
 #colnames(HIV.decom)[1] <- 'age'
 HIV.decom.L <- reshape::melt(HIV.decom, id.vars=c("age", "sex"))
 
-png(paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_HIV_decom.png",sep = ""), width = 1000, height = 800)
-ggplot(HIV.decom.L, aes(fill=variable, y=value, x=age)) +
-  geom_bar( stat="identity") + facet_grid(. ~ sex)+ coord_flip()+
-  ylab("Life-month difference")+
-  scale_fill_discrete(name = "Types of external injury")+
-  theme(text = element_text(size=16))
+labdat_hiv <- data.frame(x=4, y=5, lab=c("Total difference: 9.3 months", "Total difference: 1.3 months"), sex=c("Men","Women"))
+png(paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_HIV_decom.png",sep = ""), width = 1100, height = 800)
+ggplot(HIV.decom.L) +
+  geom_bar(aes(x=age, y=value, fill=variable), stat="identity") + facet_grid(. ~ sex)+ coord_flip()+
+  ylab("Life-year difference in months")+
+  scale_fill_discrete(name = "External injury type")+
+  theme(text = element_text(size=16), legend.position = "bottom")+
+  geom_text(aes(x,y,label=lab), data=labdat_hiv, size = 6, vjust=1)
 dev.off()
+
 
 #decomposing between periods####
 #2007-2010####
@@ -298,16 +301,19 @@ period.decom <- cbind(period.decom, age, sex)
 #colnames(period.decom)[1] <- 'age'
 period.decom.L <- reshape::melt(period.decom, id.vars=c("age", "sex"))
 
-png(paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_positive_period_decom.png",sep = ""), width = 1000, height = 800)
-ggplot(period.decom.L, aes(fill=variable, y=value, x=age)) +
-  geom_bar( stat="identity") + facet_grid(. ~ sex)+ coord_flip()+
-  ylab("Life-month difference")+
-  scale_fill_discrete(name = "Types of external injury")+
-  theme(text = element_text(size=16))
+labdat_period <- data.frame(x=4, y=4, lab=c("Total difference: 8.9 months", "Total difference: 3.2 months"), sex=c("HIV+ Men","HIV+ Women"))
+
+png(paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_positive_period_decom.png",sep = ""), width = 1100, height = 800)
+ggplot(period.decom.L) +
+  geom_bar(aes(x=age, y=value, fill=variable), stat="identity") + facet_grid(. ~ sex)+ coord_flip()+
+  ylab("Life-year difference in months")+
+  scale_fill_discrete(name = "External injury type")+
+  theme(text = element_text(size=16), legend.position = 'bottom')+
+  geom_text(aes(x,y,label=lab), data=labdat_period, size = 6, vjust=1)
 dev.off()
 
-
 dat <- dat.original #restroing original data for further analysis
+
 # #NEGATIVES
 # decomList.Women.Negative.2007.2011 <- decomList(allcause.A = asmr.all.Women.Negative.2007, allcause.B = asmr.all.Women.Negative.2011, i_cause.A=injEventList.Women.Negative.2007, i_cause.B = injEventList.Women.Negative.2011, ageint = 15)
 # colnames(decomList.Women.Negative.2007.2011) <- c(colnames(decomList.Women.Negative.2007.2011)[1:7],injNames)
