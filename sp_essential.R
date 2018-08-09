@@ -227,6 +227,8 @@ levels(dat$agegrp15) <- c("15-29","30-44", "45-59","60+")
 #new variable for HIV categorization
 #1 No more info, 2 HIV negative, 3 offART: Never treated and Interrupted ART, 4 onART: Early ART, Stable ART
 dat$art_status <- (1*(dat$hivtreat=='No more info'))+(2*(dat$hivtreat=='HIV negative'))+(3*(dat$hivtreat=='Never treated' | dat$hivtreat=='Interrupted ART'))+(4*(dat$hivtreat=='Early ART' | dat$hivtreat=='Stable ART'))
+dat$art_status <- factor(dat$art_status) #, levels = c('No more info','HIV negative', 'offART', 'onART'))
+levels(dat$art_status) <- c('No more info','HIV negative', 'offART', 'onART')
 table(dat$hivtreat,dat$art_status)
 # table(dat$hivtreat,dat$allFixed)
 # table(dat$hivtreat,dat$hivstatus_broad)
@@ -238,6 +240,9 @@ table(dat$hivtreat,dat$art_status)
 #new variable for residence, with missing as a category
 dat$residence2 <- dat$residence
 dat$residence2[which(is.na(dat$residence2))] <- 'missing'
+dat$residence2 <- factor(dat$residence2)
+levels(dat$residence2) <- c('Urban', 'Semi-urban', 'Rural', 'missing')
+class(dat$residence2)
 table(dat$residence,dat$residence2, exclude = NULL)
 
 #summary(dat[dat$period.2011_15==TRUE,]$entry)
@@ -500,6 +505,21 @@ legend(title='HIV status','bottomleft',legend = c('Negative','Positive','Unknown
 dev.off()
 par(mfrow=c(1,1))
 
+#survival curve for residence, notreported####
+png(paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_residence.png",sep = ""), width = 800, height = 600)
+sv2 <- survfit(Surv(time=time0, time2 = timex, event = fail2) ~ residence, data=dat) 
+plot(sv2, conf.int=FALSE, mark.time=FALSE, col=1:3, ymin = .8, main=paste("survival from injury death by residence", sep = "")) #by HIV status
+legend('bottomleft',legend = c('urban','semiurban','rural'), col=1:3, lty=1)
+dev.off()
+
+
+png(paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_residence2.png",sep = ""), width = 800, height = 600)
+sv2 <- survfit(Surv(time=time0, time2 = timex, event = fail2) ~ residence2, data=dat) 
+plot(sv2, conf.int=FALSE, mark.time=FALSE, col=1:3, ymin = .8, main=paste("survival from injury death by residence", sep = "")) #by HIV status
+legend('bottomleft',legend = c('urban','semiurban','rural', 'missing'), col=1:3, lty=1)
+dev.off()
+
+
 ###COX REGRESSION####
 #!!need to check proportionality of hazards
 #basic
@@ -577,11 +597,11 @@ summary(a15rs.svcox) #Positive    1.4004     0.7141    1.0689     1.835
 svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ allFixed, data=dat) 
 summary(svcox)
 #basic+agegrp+res+sex+period ** report
-a15rsp.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ allFixed+factor(agegrp15)+factor(residence)+factor(sex)+factor(period.2011_15), data=dat) 
+a15rsp.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(allFixed)+factor(agegrp15)+factor(residence)+factor(sex)+factor(period.2011_15), data=dat) 
 summary(a15rsp.svcox) #Positive    1.4369     0.6959    1.0967    1.8826
 
 #basic+agegrp+res+sex+period+interaction ** period strata specific 
-a15rspi.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ allFixed+factor(agegrp15)+factor(residence)+factor(sex)+factor(period.2011_15)+allFixed:factor(period.2011_15), data=dat) 
+a15rspi.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(allFixed)+factor(agegrp15)+factor(residence)+factor(sex)+factor(period.2011_15)+allFixed:factor(period.2011_15), data=dat) 
 summary(a15rspi.svcox) #Positive   1.6619     0.6017    1.1501     2.401
 
 #stratam specific hazard ratios####
@@ -606,13 +626,13 @@ write.csv(stra_spec,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.
 
 
 #basic+agegrp+res+sex+period+interaction
-a15rsip.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ allFixed+factor(agegrp15)+factor(residence)+factor(sex)+factor(period.2011_15)+allFixed:factor(sex), data=dat) 
+a15rsip.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(allFixed)+factor(agegrp15)+factor(residence)+factor(sex)+factor(period.2011_15)+allFixed:factor(sex), data=dat) 
 summary(a15rsip.svcox) #Positive  1.5647     0.6391    1.1299    2.1668
 
-a15irsp.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ allFixed+factor(agegrp15)+factor(residence)+factor(sex)+factor(period.2011_15)+allFixed:factor(agegrp15), data=dat) 
+a15irsp.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(allFixed)+factor(agegrp15)+factor(residence)+factor(sex)+factor(period.2011_15)+allFixed:factor(agegrp15), data=dat) 
 summary(a15irsp.svcox) #Positive     1.8999     0.5263    1.1869    3.0414
 
-a15risp.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ allFixed+factor(agegrp15)+factor(residence)+factor(sex)+factor(period.2011_15)+allFixed:factor(residence), data=dat) 
+a15risp.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(allFixed)+factor(agegrp15)+factor(residence)+factor(sex)+factor(period.2011_15)+allFixed:factor(residence), data=dat) 
 summary(a15risp.svcox) #Positive   3.6109     0.2769   0.99050   13.1633
 
 #anova
@@ -742,14 +762,42 @@ prop.table(table(datL$allFixed, datL$period.2011_15),2)
 chisq.test(datL$allFixed,datL$period.2011_15) #X-squared = 727.4, df = 2, p-value < 2.2e-16
 
 #cox regression, reported####
-crude.cox <- coxph(Surv(time=timex-time0, event = fail2) ~ allFixed, data=dat) 
+crude.cox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(allFixed), data=dat) 
 summary(crude.cox)
 
-arsp.cox <- coxph(Surv(time=timex-time0, event = fail2) ~ allFixed+factor(sex)+factor(agegrp15)+factor(period.2011_15)+factor(residence), data=dat) 
+arsp.cox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(allFixed)+factor(sex)+factor(agegrp15)+factor(period.2011_15)+factor(residence), data=dat) 
 summary(arsp.cox)
 arsp.cox.ph <- cox.zph(arsp.cox)
 arsp.cox.ph
 
+arspi.cox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(allFixed)+factor(sex)+factor(agegrp15)+factor(period.2011_15)+factor(residence)+factor(allFixed):factor(period.2011_15), data=dat) 
+anova(arsp.cox, arspi.cox)
+
+#cox regression, testing out residence2####
+# crude.cox <- coxph(Surv(time=timex-time0, event = fail2) ~ allFixed, data=dat) 
+# summary(crude.cox)
+a15rsp.cox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(allFixed)+factor(sex)+factor(agegrp15)+factor(period.2011_15)+factor(residence2), data=dat) 
+summary(a15rsp.cox)
+a15rsp.cox.ph <- cox.zph(a15rsp.cox)
+a15rsp.cox.ph
+
+#without residence in the model
+a15sp.cox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(allFixed)+factor(sex)+factor(agegrp15)+factor(period.2011_15), data=dat) 
+summary(a15sp.cox)
+a15sp.cox.ph <- cox.zph(a15sp.cox)
+a15sp.cox.ph
+
+#interaction between HIV status and period
+a15rspi.cox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(allFixed)+factor(sex)+factor(agegrp15)+factor(period.2011_15)+factor(residence2)+factor(allFixed):factor(period.2011_15), data=dat) 
+summary(a15rspi.cox)
+a15spi.cox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(allFixed)+factor(sex)+factor(agegrp15)+factor(period.2011_15)+factor(allFixed):factor(period.2011_15), data=dat) 
+summary(a15spi.cox)
+
+#anova, using residence2
+anova(a15rsp.cox, a15rspi.cox) #p .1809
+anova(a15sp.cox,a15spi.cox) #p 0.1812
+anova(a15sp.cox,a15rsp.cox) #p 0.1276
+anova(asp.cox,arsp.cox) #arsp is with missing value, thus it will not run!
 
 #lexis
 if(FALSE){
