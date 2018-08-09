@@ -16,6 +16,7 @@ library(Epi)
 library(popEpi)
 library(ggplot2)
 library(data.table)
+library(survey) #for svycontrast
 source('~/OneDrive/Summer Project/script-files/sp_functions.R')
 
 setwd("~/OneDrive/Summer Project/data/")
@@ -222,6 +223,23 @@ dat$period.2011_15 <- dat$entry>="2011-01-01"
 dat$agegrp15 <- cut(dat$age, c(15,30,45,60, 122), include.lowest = T, right = F)
 with(dat,table(agegrp15, agegrp))
 levels(dat$agegrp15) <- c("15-29","30-44", "45-59","60+")
+
+#new variable for HIV categorization
+#1 No more info, 2 HIV negative, 3 offART: Never treated and Interrupted ART, 4 onART: Early ART, Stable ART
+dat$art_status <- (1*(dat$hivtreat=='No more info'))+(2*(dat$hivtreat=='HIV negative'))+(3*(dat$hivtreat=='Never treated' | dat$hivtreat=='Interrupted ART'))+(4*(dat$hivtreat=='Early ART' | dat$hivtreat=='Stable ART'))
+table(dat$hivtreat,dat$art_status)
+# table(dat$hivtreat,dat$allFixed)
+# table(dat$hivtreat,dat$hivstatus_broad)
+# table(dat$hivtreat)
+# table(dat$hivevertreat,dat$allFixed)
+# table(dat$allinfo_treat_pyramid, dat$hivstatus_broad, exclude = NULL)
+# tmp <- dat[which(dat$hivtreat=='HIV negative' & dat$allFixed=='Positive'),]
+
+#new variable for residence, with missing as a category
+dat$residence2 <- dat$residence
+dat$residence2[which(is.na(dat$residence2))] <- 'missing'
+table(dat$residence,dat$residence2, exclude = NULL)
+
 #summary(dat[dat$period.2011_15==TRUE,]$entry)
 #summary(dat[dat$period.2011_15==FALSE,]$entry)
 
@@ -567,6 +585,14 @@ a15rspi.svcox <- coxph(Surv(time=timex-time0, event = fail2) ~ allFixed+factor(a
 summary(a15rspi.svcox) #Positive   1.6619     0.6017    1.1501     2.401
 
 #stratam specific hazard ratios####
+unk2007 <- svycontrast(a15rspi.svcox,c("allFixedUnknown"=1))
+unk2011 <- svycontrast(a15rspi.svcox,c("allFixedUnknown"=1, "allFixedUnknown:factor(period.2011_15)TRUE"=1))
+unk2007ci <- c(exp(unk2007[1]),exp(unk2007-(1.96*.1878))[1],exp(unk2007+(1.96*.1878))[1], NA) 
+unk2011ci <- c(exp(unk2011[1]),exp(unk2011-(1.96*.1878))[1],exp(unk2011+(1.96*.1878))[1], NA) 
+stra_spec_unk <- rbind(unk2007ci,unk2011ci)
+colnames(stra_spec_unk) <- c('HR','lower','upper','p-value')
+write.csv(stra_spec_unk,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_periodStratum_spec_Unk.csv",sep = ""))
+
 pos2007 <- svycontrast(a15rspi.svcox,c("allFixedPositive"=1))
 pos2011 <- svycontrast(a15rspi.svcox,c("allFixedPositive"=1, "allFixedPositive:factor(period.2011_15)TRUE"=1))
 
