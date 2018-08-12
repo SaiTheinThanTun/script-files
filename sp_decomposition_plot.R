@@ -13,6 +13,7 @@ creation <- FALSE #WRITE NEW FILES
 
 setwd('~/OneDrive/Summer Project/data')
 dat <- readRDS('dat_lifetable.RDS')
+#write.csv(dat,'processed.csv')
 injNames <- readRDS('accidentNames.RDS')
 
 #putting new variables for each injury

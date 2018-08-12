@@ -227,15 +227,19 @@ levels(dat$agegrp15) <- c("15-29","30-44", "45-59","60+")
 #new variable for HIV categorization
 #1 No more info, 2 HIV negative, 3 offART: Never treated and Interrupted ART, 4 onART: Early ART, Stable ART
 dat$art_status <- (1*(dat$hivtreat=='No more info'))+(2*(dat$hivtreat=='HIV negative'))+(3*(dat$hivtreat=='Never treated' | dat$hivtreat=='Interrupted ART'))+(4*(dat$hivtreat=='Early ART' | dat$hivtreat=='Stable ART'))
+if('Off ART' %in% dat$hivtreat) print('check recoding for Off ART!!!!') #flag anticipating for more data added which might have Off ART individuals
 dat$art_status <- factor(dat$art_status) #, levels = c('No more info','HIV negative', 'offART', 'onART'))
-levels(dat$art_status) <- c('No more info','HIV negative', 'offART', 'onART')
+levels(dat$art_status) <- c('Unknown','HIV negative', 'offART', 'onART')
 table(dat$hivtreat,dat$art_status)
-# table(dat$hivtreat,dat$allFixed)
-# table(dat$hivtreat,dat$hivstatus_broad)
-# table(dat$hivtreat)
-# table(dat$hivevertreat,dat$allFixed)
-# table(dat$allinfo_treat_pyramid, dat$hivstatus_broad, exclude = NULL)
-# tmp <- dat[which(dat$hivtreat=='HIV negative' & dat$allFixed=='Positive'),]
+
+#1 No more info, 2 HIV negative, 3 HIV+ never started ART, 4 HIV+ ever started ART
+dat$art_status2 <- (1*(dat$hivtreat=='No more info'))+(2*(dat$hivtreat=='HIV negative'))+(3*(dat$hivtreat=='Never treated'))+(4*(dat$hivtreat=='Early ART' | dat$hivtreat=='Stable ART'| dat$hivtreat=='Interrupted ART'))
+dat$art_status2 <- factor(dat$art_status2) 
+levels(dat$art_status2) <- c('Unknown','HIV negative', 'HIV+ never started ART', 'HIV+ ever started ART')
+table(dat$hivtreat,dat$art_status2)
+
+#new variable for calander time
+dat$ct <- year(dat$exit)
 
 #new variable for residence, with missing as a category
 dat$residence2 <- dat$residence
@@ -773,31 +777,78 @@ arsp.cox.ph
 arspi.cox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(allFixed)+factor(sex)+factor(agegrp15)+factor(period.2011_15)+factor(residence)+factor(allFixed):factor(period.2011_15), data=dat) 
 anova(arsp.cox, arspi.cox)
 
-#cox regression, testing out residence2####
+
+#cox regression, testing out residence2, not going well####
 # crude.cox <- coxph(Surv(time=timex-time0, event = fail2) ~ allFixed, data=dat) 
 # summary(crude.cox)
 a15rsp.cox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(allFixed)+factor(sex)+factor(agegrp15)+factor(period.2011_15)+factor(residence2), data=dat) 
 summary(a15rsp.cox)
 a15rsp.cox.ph <- cox.zph(a15rsp.cox)
 a15rsp.cox.ph
-
-#without residence in the model
-a15sp.cox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(allFixed)+factor(sex)+factor(agegrp15)+factor(period.2011_15), data=dat) 
-summary(a15sp.cox)
-a15sp.cox.ph <- cox.zph(a15sp.cox)
-a15sp.cox.ph
-
 #interaction between HIV status and period
 a15rspi.cox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(allFixed)+factor(sex)+factor(agegrp15)+factor(period.2011_15)+factor(residence2)+factor(allFixed):factor(period.2011_15), data=dat) 
 summary(a15rspi.cox)
-a15spi.cox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(allFixed)+factor(sex)+factor(agegrp15)+factor(period.2011_15)+factor(allFixed):factor(period.2011_15), data=dat) 
-summary(a15spi.cox)
-
 #anova, using residence2
 anova(a15rsp.cox, a15rspi.cox) #p .1809
+anova(a15sp.cox,a15rsp.cox) #p 0.1276, adding residence to the model makes no difference
+
+
+#without residence in the model
+a15sp.cox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(allFixed)+factor(sex)+factor(agegrp15)+factor(period.2011_15), data=dat)
+a15sp.cox <- coxph(Surv(time=exit-entry, event = fail2) ~ factor(allFixed)+factor(sex)+factor(agegrp15)+factor(period.2011_15), data=dat) 
+a15sp.cox <- coxph(Surv(time2=as.numeric(exit), time=as.numeric(entry), event = fail2) ~ factor(allFixed)+factor(sex)+factor(agegrp15)+factor(period.2011_15), data=dat) 
+summary(a15sp.cox)
+a15sp.cox.ph <- cox.zph(a15sp.cox) #, transform = 'identity')
+a15sp.cox.ph
+survminer::ggcoxzph(a15sp.cox.ph)
+
+for(i in 1:(nrow(a15sp.cox.ph$table)-1)){
+  png(paste("~/OneDrive/Summer Project/output/fit/",gsub("\\:","",Sys.time()),"_",rownames(a15sp.cox.ph$table)[i],"_fit.png",sep = ""), width = 1100, height = 800)
+  plot(a15sp.cox.ph[i], main=(paste(rownames(a15sp.cox.ph$table)[i])))
+  abline(0,0, col=2)
+  abline(h= a15sp.cox$coef[i], col=3, lwd=2, lty=2)
+  
+  dev.off()
+}
+
+#interaction, without residence in the model
+a15spi.cox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(allFixed)+factor(sex)+factor(agegrp15)+factor(period.2011_15)+factor(allFixed):factor(period.2011_15), data=dat) 
+summary(a15spi.cox)
 anova(a15sp.cox,a15spi.cox) #p 0.1812
-anova(a15sp.cox,a15rsp.cox) #p 0.1276
+
 anova(asp.cox,arsp.cox) #arsp is with missing value, thus it will not run!
+
+#without residence in the model+calendar time
+a15spt.cox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(allFixed)+factor(sex)+factor(agegrp15)+ct, data=dat) 
+summary(a15spt.cox)
+a15spt.cox.ph <- cox.zph(a15spt.cox)
+a15spt.cox.ph
+#interaction, without residence in the model+calendar time
+a15spti.cox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(allFixed)+factor(sex)+factor(agegrp15)+factor(allFixed):factor(period.2011_15), data=dat) 
+summary(a15spti.cox)
+anova(a15spt.cox,a15spti.cox)
+
+#testing out new art_status category####
+#without residence and with new ART categorization
+dat$art_status2 <- relevel(dat$art_status2, ref = 'HIV negative')
+a15spART2.cox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(art_status2)+factor(sex)+factor(agegrp15)+factor(period.2011_15), data=dat) 
+summary(a15spART2.cox)
+a15spART2.cox.ph <- cox.zph(a15spART2.cox)
+a15spART2.cox.ph
+a15spART2i.cox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(art_status2)+factor(sex)+factor(agegrp15)+factor(period.2011_15)+factor(art_status2):factor(period.2011_15), data=dat) 
+summary(a15spART2i.cox)
+anova(a15spART2.cox, a15spART2i.cox)
+
+#without residence and with new ART categorization+calendar time
+dat$art_status2 <- relevel(dat$art_status2, ref = 'HIV negative')
+a15spART2t.cox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(art_status2)+factor(sex)+factor(agegrp15)+ct, data=dat) 
+summary(a15spART2t.cox)
+a15spART2t.cox.ph <- cox.zph(a15spART2t.cox)
+a15spART2t.cox.ph
+#no period, no interaction to test
+a15spART2ti.cox <- coxph(Surv(time=timex-time0, event = fail2) ~ factor(art_status2)+factor(sex)+factor(agegrp15)+ct+factor(art_status2):factor(period.2011_15), data=dat) 
+summary(a15spART2ti.cox)
+anova(a15spART2t.cox, a15spART2ti.cox)
 
 #lexis
 if(FALSE){
