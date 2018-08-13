@@ -225,17 +225,18 @@ with(dat,table(agegrp15, agegrp))
 levels(dat$agegrp15) <- c("15-29","30-44", "45-59","60+")
 
 #new variable for HIV categorization
-#1 No more info, 2 HIV negative, 3 offART: Never treated and Interrupted ART, 4 onART: Early ART, Stable ART
-dat$art_status <- (1*(dat$hivtreat=='No more info'))+(2*(dat$hivtreat=='HIV negative'))+(3*(dat$hivtreat=='Never treated' | dat$hivtreat=='Interrupted ART'))+(4*(dat$hivtreat=='Early ART' | dat$hivtreat=='Stable ART'))
+#1 No more info, 2 HIV negative, 3 offART: Never treated and Interrupted ART, 4 onART: Early ART, Stable ART, 5 HIV+ No more info
+dat$art_status <- (1*(dat$allFixed=='Unknown'))+(2*(dat$allFixed=='Negative'))+(3*(((dat$allFixed=='Positive')&(dat$hivtreat=='Never treated' | dat$hivtreat=='Interrupted ART'))|((dat$allFixed=='Positive')&(dat$hivtreat=='HIV negative'))))+(4*((dat$allFixed=='Positive')&(dat$hivtreat=='Early ART' | dat$hivtreat=='Stable ART')))+(5*((dat$allFixed=='Positive')&(dat$hivtreat=='No more info')))
+#hiv positive on seroconversion 4777 is added as offART
 if('Off ART' %in% dat$hivtreat) print('check recoding for Off ART!!!!') #flag anticipating for more data added which might have Off ART individuals
 dat$art_status <- factor(dat$art_status) #, levels = c('No more info','HIV negative', 'offART', 'onART'))
-levels(dat$art_status) <- c('Unknown','HIV negative', 'offART', 'onART')
+levels(dat$art_status) <- c('Unknown','HIV negative', 'HIV+ offART', 'HIV+ onART', 'HIV+ No more info')
 table(dat$hivtreat,dat$art_status)
 
-#1 No more info, 2 HIV negative, 3 HIV+ never started ART, 4 HIV+ ever started ART
-dat$art_status2 <- (1*(dat$hivtreat=='No more info'))+(2*(dat$hivtreat=='HIV negative'))+(3*(dat$hivtreat=='Never treated'))+(4*(dat$hivtreat=='Early ART' | dat$hivtreat=='Stable ART'| dat$hivtreat=='Interrupted ART'))
+#1 Unknown, 2 HIV negative, 3 HIV+ never started ART, 4 HIV+ ever started ART, 5 HIV+ No more info
+dat$art_status2 <- (1*(dat$allFixed=='Unknown'))+(2*(dat$allFixed=='Negative'))+(3*(((dat$allFixed=='Positive')&(dat$hivtreat=='Never treated'))|((dat$allFixed=='Positive')&(dat$hivtreat=='HIV negative'))))+(4*((dat$allFixed=='Positive')&(dat$hivtreat=='Early ART' | dat$hivtreat=='Stable ART'| dat$hivtreat=='Interrupted ART')))+(5*((dat$allFixed=='Positive')&(dat$hivtreat=='No more info')))
 dat$art_status2 <- factor(dat$art_status2) 
-levels(dat$art_status2) <- c('Unknown','HIV negative', 'HIV+ never started ART', 'HIV+ ever started ART')
+levels(dat$art_status2) <- c('Unknown','HIV negative', 'HIV+ never started ART', 'HIV+ ever started ART', 'HIV+ No more info')
 table(dat$hivtreat,dat$art_status2)
 
 #new variable for calander time
@@ -257,7 +258,8 @@ table(dat$residence,dat$residence2, exclude = NULL)
 #fail2 is external injury related death
 
 #saveRDS(dat, 'dat_lifetable.RDS') #processed data file to be used for lifetable
-
+#library(foreign)
+#write.dta(dat,'processed2.dta')
 
 ####sex, age, py distributions####
 desTableNames <- c('Individuals','Person-years','All cause: deaths', 'Rate', 'Low 95%CI', 'High 95%CI','Ext. Inj: deaths', 'Rate', 'Low 95%CI', 'High 95%CI')
