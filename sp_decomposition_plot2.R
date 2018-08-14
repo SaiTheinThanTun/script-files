@@ -33,9 +33,6 @@ asmr.inj.Women.Negative <- lt(pyears(Surv(time=time0, time2 = timex, event = fai
 #Positive
 asmr.all.Women.Positive <- lt(pyears(Surv(time=time0, time2 = timex, event = fail0) ~ agegrp15, data=dat.Women[dat.Women$allFixed=='Positive',], scale = 1), ageint = 15)
 asmr.inj.Women.Positive <- lt(pyears(Surv(time=time0, time2 = timex, event = fail2) ~ agegrp15, data=dat.Women[dat.Women$allFixed=='Positive',], scale = 1), ageint = 15)
-#Unknown
-asmr.all.Women.Unknown <- lt(pyears(Surv(time=time0, time2 = timex, event = fail0) ~ agegrp15, data=dat.Women[dat.Women$allFixed=='Unknown',], scale = 1), ageint = 15)
-asmr.inj.Women.Unknown <- lt(pyears(Surv(time=time0, time2 = timex, event = fail2) ~ agegrp15, data=dat.Women[dat.Women$allFixed=='Unknown',], scale = 1), ageint = 15)
 
 #Men
 dat.Men <- dat[dat$sex=='Men',]
@@ -46,10 +43,6 @@ asmr.inj.Men.Negative <- lt(pyears(Surv(time=time0, time2 = timex, event = fail2
 #Positive
 asmr.all.Men.Positive <- lt(pyears(Surv(time=time0, time2 = timex, event = fail0) ~ agegrp15, data=dat.Men[dat.Men$allFixed=='Positive',], scale = 1), ageint = 15)
 asmr.inj.Men.Positive <- lt(pyears(Surv(time=time0, time2 = timex, event = fail2) ~ agegrp15, data=dat.Men[dat.Men$allFixed=='Positive',], scale = 1), ageint = 15)
-
-#Unknown
-asmr.all.Men.Unknown <- lt(pyears(Surv(time=time0, time2 = timex, event = fail0) ~ agegrp15, data=dat.Men[dat.Men$allFixed=='Unknown',], scale = 1), ageint = 15)
-asmr.inj.Men.Unknown <- lt(pyears(Surv(time=time0, time2 = timex, event = fail2) ~ agegrp15, data=dat.Men[dat.Men$allFixed=='Unknown',], scale = 1), ageint = 15)
 
 
 #DECOMPOSITION BY AGE, SEX, HIV STATUS AND EACH INJURY COD, ie many columns####
@@ -64,10 +57,6 @@ injEventList.Women.Negative <- lapply(injNames,function(x){
   pyears(Surv(time=time0, time2 = timex, event = datL[,which(colnames(datL)==x)]) ~ agegrp15, data=datL, scale = 1)$event
 })
 
-datL <- dat[which(dat$sex=="Women" & dat$allFixed=="Unknown"),]
-injEventList.Women.Unknown <- lapply(injNames,function(x){
-  pyears(Surv(time=time0, time2 = timex, event = datL[,which(colnames(datL)==x)]) ~ agegrp15, data=datL, scale = 1)$event
-})
 
 #Men
 datL <- dat[which(dat$sex=="Men" & dat$allFixed=="Positive"),]
@@ -80,10 +69,6 @@ injEventList.Men.Negative <- lapply(injNames,function(x){
   pyears(Surv(time=time0, time2 = timex, event = datL[,which(colnames(datL)==x)]) ~ agegrp15, data=datL, scale = 1)$event
 })
 
-datL <- dat[which(dat$sex=="Men" & dat$allFixed=="Unknown"),]
-injEventList.Men.Unknown <- lapply(injNames,function(x){
-  pyears(Surv(time=time0, time2 = timex, event = datL[,which(colnames(datL)==x)]) ~ agegrp15, data=datL, scale = 1)$event
-})
 
 #Women
 decomList.Women.Positive.Negative <- decomList(allcause.A = asmr.all.Women.Positive, allcause.B = asmr.all.Women.Negative, i_cause.A=injEventList.Women.Positive, i_cause.B = injEventList.Women.Negative, ageint = 15)
@@ -91,19 +76,12 @@ colnames(decomList.Women.Positive.Negative) <- c(colnames(decomList.Women.Positi
 #decomList.Women.Positive.Negative
 if(creation) write.csv(decomList.Women.Positive.Negative, paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_decomList_Women_Positive_Negative.csv",sep = ""))
 
-# decomList.Women.Unknown.Negative <- decomList(allcause.A = asmr.all.Women.Unknown, allcause.B = asmr.all.Women.Negative, i_cause.A=injEventList.Women.Unknown, i_cause.B = injEventList.Women.Negative, ageint = 15)
-# colnames(decomList.Women.Unknown.Negative) <- c(colnames(decomList.Women.Unknown.Negative)[1:7],injNames)
-# if(creation) write.csv(decomList.Women.Unknown.Negative, paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_decomList_Women_Unknown_Negative.csv",sep = ""))
-
 #Men
 decomList.Men.Positive.Negative <- decomList(allcause.A = asmr.all.Men.Positive, allcause.B = asmr.all.Men.Negative, i_cause.A=injEventList.Men.Positive, i_cause.B = injEventList.Men.Negative, ageint = 15)
 colnames(decomList.Men.Positive.Negative) <- c(colnames(decomList.Men.Positive.Negative)[1:7],injNames)
 #decomList.Men.Positive.Negative
 if(creation) write.csv(decomList.Men.Positive.Negative, paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_decomList_Men_Positive_Negative.csv",sep = ""))
 
-# decomList.Men.Unknown.Negative <- decomList(allcause.A = asmr.all.Men.Unknown, allcause.B = asmr.all.Men.Negative, i_cause.A=injEventList.Men.Unknown, i_cause.B = injEventList.Men.Negative, ageint = 15)
-# colnames(decomList.Men.Unknown.Negative) <- c(colnames(decomList.Men.Unknown.Negative)[1:7],injNames)
-# if(creation) write.csv(decomList.Men.Unknown.Negative, paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_decomList_Men_Unknown_Negative.csv",sep = ""))
 
 #plot for between HIV status comparison####
 #decomList.Men.Positive.Negative #data to use
