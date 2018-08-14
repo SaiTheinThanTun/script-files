@@ -105,14 +105,16 @@ stcox i.allFixed i.sex ct //1.38, p=0.009 #best2#
 estat phtest, detail //global p=0
 
 stcox i.allFixed ct, strata(sex) //1.46, p=0.002 #best3#
+estimates store A
 estat phtest, detail //global p=0.0048. HIV unknown, p=0.0034, is bringing down. it has time dependency
 
-stcox i.allFixed ct, strata(sex residence2) //1.43, p=0.004, best4, because it doesn't violate PH assumption
-estimates store A
-estat phtest, detail
+//stcox i.allFixed ct, strata(sex residence2) //1.43, p=0.004, best4, because it doesn't violate PH assumption
+//estimates store A
+//estat phtest, detail
 
 
-stcox i.allFixed##ct, strata(sex residence2) //best5##
+//stcox i.allFixed##ct, strata(sex residence2) //best5##
+stcox i.allFixed##ct, strata(sex) //best5##
 estimates store B
 lrtest A B 
 estat phtest, detail
@@ -191,11 +193,47 @@ log close
 clear
 cd "/Users/sai/OneDrive/Summer Project/stata/"
 capture log close
-log using "sp2_log_everART.log", replace
+log using "sp2_log_tvc.log", replace
 use "processed2.dta"
 set more off 
+
+stset exit, id(idno_original) failure(fail2) time0(entry) origin(time dob) scale(365.25)
 
 ta allFixed, gen(allFixed)
 des allFixed*
 
-stcox i.allFixed i.sex ct i.residence2, tvc(allFixed) texp(_t) nolog
+stcox i.allFixed i.sex ct i.residence2
+estat phtest, detail 
+stcox i.allFixed2 i.allFixed3 i.sex ct i.residence2
+estat phtest, detail 
+
+stcox i.allFixed2 i.allFixed3 i.sex ct i.residence2, tvc(allFixed3) texp(_t) nolog
+
+stcox i.allFixed2 i.allFixed3 i.sex ct i.residence2, tvc(allFixed3 sex) texp(_t) nolog
+
+log close
+
+//final best model
+clear
+cd "/Users/sai/OneDrive/Summer Project/stata/"
+capture log close
+log using "sp2_log_finalbest.log", replace
+use "processed2.dta"
+set more off 
+
+stset exit, id(idno_original) failure(fail2) time0(entry) origin(time dob) scale(365.25)
+
+ta allFixed, gen(allFixed)
+
+stcox i.allFixed ct, strata(sex) //1.46, p=0.002 #best3#
+estimates store A
+estat phtest, detail //global p=0.0048. HIV unknown, p=0.0034, is bringing down. it has time dependency
+
+stcox i.allFixed##ct, strata(sex) //best5##
+estimates store B
+lrtest A B 
+estat phtest, detail
+
+stcox i.allFixed2 i.allFixed3 i.sex ct, tvc(allFixed3 sex) texp(_t) nolog
+
+log close
