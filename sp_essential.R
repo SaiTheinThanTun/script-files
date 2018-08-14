@@ -230,13 +230,13 @@ dat$art_status <- (1*(dat$allFixed=='Unknown'))+(2*(dat$allFixed=='Negative'))+(
 #hiv positive on seroconversion 4777 is added as offART
 if('Off ART' %in% dat$hivtreat) print('check recoding for Off ART!!!!') #flag anticipating for more data added which might have Off ART individuals
 dat$art_status <- factor(dat$art_status) #, levels = c('No more info','HIV negative', 'offART', 'onART'))
-levels(dat$art_status) <- c('Unknown','HIV negative', 'HIV+ offART', 'HIV+ onART', 'HIV+ No more info')
+levels(dat$art_status) <- c('HIV Unknown','HIV negative', 'HIV+ offART', 'HIV+ onART', 'HIV+ No more info')
 table(dat$hivtreat,dat$art_status)
 
 #1 Unknown, 2 HIV negative, 3 HIV+ never started ART, 4 HIV+ ever started ART, 5 HIV+ No more info
-dat$art_status2 <- (1*(dat$allFixed=='Unknown'))+(2*(dat$allFixed=='Negative'))+(3*(((dat$allFixed=='Positive')&(dat$hivtreat=='Never treated'))|((dat$allFixed=='Positive')&(dat$hivtreat=='HIV negative'))))+(4*((dat$allFixed=='Positive')&(dat$hivtreat=='Early ART' | dat$hivtreat=='Stable ART'| dat$hivtreat=='Interrupted ART')))+(5*((dat$allFixed=='Positive')&(dat$hivtreat=='No more info')))
+dat$art_status2 <- (1*(dat$allFixed=='Unknown'))+(2*(dat$allFixed=='Negative'))+(3*(((dat$allFixed=='Positive')&(dat$hivtreat=='Never treated'))|((dat$allFixed=='Positive')&(dat$hivtreat=='HIV negative'))|((dat$allFixed=='Positive')&(dat$hivtreat=='No more info'))))+(4*((dat$allFixed=='Positive')&(dat$hivtreat=='Early ART' | dat$hivtreat=='Stable ART'| dat$hivtreat=='Interrupted ART')))
 dat$art_status2 <- factor(dat$art_status2) 
-levels(dat$art_status2) <- c('Unknown','HIV negative', 'HIV+ never started ART', 'HIV+ ever started ART', 'HIV+ No more info')
+levels(dat$art_status2) <- c('HIV Unknown','HIV Negative', 'HIV+unknownART', 'HIV+ART')
 table(dat$hivtreat,dat$art_status2)
 
 #new variable for calander time

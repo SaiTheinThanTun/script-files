@@ -237,3 +237,80 @@ estat phtest, detail
 stcox i.allFixed2 i.allFixed3 i.sex ct, tvc(allFixed3 sex) texp(_t) nolog
 
 log close
+
+
+//final best model:testing tvc with strata sex
+clear
+cd "/Users/sai/OneDrive/Summer Project/stata/"
+capture log close
+log using "sp2_tvc_sexStrata.log", replace
+use "processed2.dta"
+set more off 
+
+stset exit, id(idno_original) failure(fail2) time0(entry) origin(time dob) scale(365.25)
+ta allFixed, gen(allFixed)
+
+stcox i.allFixed2 i.allFixed3 ct, strata(sex) tvc(allFixed3) texp(_t) nolog
+
+log close
+
+
+//testing interaction
+clear
+cd "/Users/sai/OneDrive/Summer Project/stata/"
+capture log close
+log using "sp2_interaction_sex_ct.log", replace
+use "processed2.dta"
+set more off 
+
+stset exit, id(idno_original) failure(fail2) time0(entry) origin(time dob) scale(365.25)
+ta allFixed, gen(allFixed)
+
+//ct squared
+gen cen_ct=ct-2011.35 
+gen ct_sq= cen_ct*cen_ct
+drop cen_ct
+summarize ct_sq
+stcox i.allFixed i.sex ct ct_sq
+
+
+//new ART status variable
+stcox ib2.art_status2 
+estat phtest, detail
+stcox ib2.art_status2 i.sex 
+estat phtest, detail
+stcox ib2.art_status2 i.sex ct 
+estat phtest, detail
+stcox ib2.art_status2 i.sex ct ct_sq
+estat phtest, detail
+
+//regression seprately by sex
+//male
+stcox i.allFixed ct if sex==1
+estat phtest, detail
+//female
+stcox i.allFixed ct if sex==2
+estat phtest, detail
+
+//old HIV status with interaction between sex and calendar time
+//original
+stcox i.allFixed i.sex ct
+estimates store A
+estat phtest, detail
+stcox i.allFixed##i.sex ct, nofvlabel
+estimates store B
+estat phtest, detail
+lrtest A B
+
+lincom 2.allFixed + 2.allFixed#2.sex
+lincom 3.allFixed + 3.allFixed#2.sex
+
+stcox i.allFixed i.sex ct
+estimates store A
+stcox i.allFixed i.sex##ct, nofvlabel
+estimates store B
+estat phtest, detail
+lrtest A B
+
+log close
+
