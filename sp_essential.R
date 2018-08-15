@@ -236,7 +236,7 @@ table(dat$hivtreat,dat$art_status)
 #1 Unknown, 2 HIV negative, 3 HIV+ never started ART, 4 HIV+ ever started ART, 5 HIV+ No more info
 dat$art_status2 <- (1*(dat$allFixed=='Unknown'))+(2*(dat$allFixed=='Negative'))+(3*(((dat$allFixed=='Positive')&(dat$hivtreat=='Never treated'))|((dat$allFixed=='Positive')&(dat$hivtreat=='HIV negative'))|((dat$allFixed=='Positive')&(dat$hivtreat=='No more info'))))+(4*((dat$allFixed=='Positive')&(dat$hivtreat=='Early ART' | dat$hivtreat=='Stable ART'| dat$hivtreat=='Interrupted ART')))
 dat$art_status2 <- factor(dat$art_status2) 
-levels(dat$art_status2) <- c('HIV Unknown','HIV Negative', 'HIV+unknownART', 'HIV+ART')
+levels(dat$art_status2) <- c('HIV Unknown','HIV Negative', 'HIVposUnknownART', 'HIVposART')
 table(dat$hivtreat,dat$art_status2)
 
 #new variable for calander time

@@ -121,6 +121,7 @@ asdt <- function(allcause, i_cause, ageint, deletion=TRUE){
 
 #function for associated single decrement life table (ASDT) and cause deleted life table#### 
 decom <- function(allcause.A, allcause.B, i_cause.A, i_cause.B, ageint){
+  #B-A is done!
   #decompose by age and cause
   #data needed: LT of 2 groups eg. HIV+ & -, their all cause mortality and # of i cause deaths
   #allcause and i_cause are dataframe resulted from `lt` function
@@ -167,6 +168,7 @@ decom <- function(allcause.A, allcause.B, i_cause.A, i_cause.B, ageint){
 
 #function for associated single decrement life table (ASDT) and cause deleted life table, for a list of death events#### 
 decomList <- function(allcause.A, allcause.B, i_cause.A, i_cause.B, ageint){
+  #B-A is done!
   #decompose by age and cause
   #data needed: LT of 2 groups eg. HIV+ & -, their all cause mortality and # of i cause deaths
   #allcause are dataframe resulted from `lt` function

@@ -122,7 +122,8 @@ HIV.decom <- cbind(HIV.decom, age, sex)
 #colnames(HIV.decom)[1] <- 'age'
 HIV.decom.L <- reshape::melt(HIV.decom, id.vars=c("age", "sex"))
 
-labdat_hiv <- data.frame(x=4, y=5, lab=c("Total difference: 9.3 months", "Total difference: 1.3 months"), sex=c("Men","Women"))
+#labdat_hiv <- data.frame(x=4, y=5, lab=c("Total difference: 9.3 months", "Total difference: 1.3 months"), sex=c("Men","Women"))
+labdat_hiv <- data.frame(x=4, y=5, lab=c(paste("Total difference:",round(sum(decomList.Men.Positive.Negative[,8:18]),2),"months"), paste("Total difference:",round(sum(decomList.Women.Positive.Negative[,8:18]),2),"months")), sex=c("Men","Women"))
 png(paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_HIV_decom.png",sep = ""), width = 1100, height = 800)
 ggplot(HIV.decom.L) +
   geom_bar(aes(x=age, y=value, fill=variable), stat="identity") + facet_grid(. ~ sex)+ coord_flip()+
@@ -302,8 +303,8 @@ period.decom <- cbind(period.decom, age, sex)
 #colnames(period.decom)[1] <- 'age'
 period.decom.L <- reshape::melt(period.decom, id.vars=c("age", "sex"))
 
-labdat_period <- data.frame(x=4, y=4, lab=c("Total difference: 8.9 months", "Total difference: 3.2 months"), sex=c("HIV+ Men","HIV+ Women"))
-
+#labdat_period <- data.frame(x=4, y=4, lab=c("Total difference: 8.9 months", "Total difference: 3.2 months"), sex=c("HIV+ Men","HIV+ Women"))
+labdat_period <- data.frame(x=4, y=4, lab=c(paste("Total difference:",round(sum(decomList.Men.Positive.2007.2011[,8:18]),2),"months"), paste("Total difference:",round(sum(decomList.Women.Positive.2007.2011[,8:18]),2),"months")), sex=c("Men","Women"))
 png(paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_positive_period_decom.png",sep = ""), width = 1100, height = 800)
 ggplot(period.decom.L) +
   geom_bar(aes(x=age, y=value, fill=variable), stat="identity") + facet_grid(. ~ sex)+ coord_flip()+
