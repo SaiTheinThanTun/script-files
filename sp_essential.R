@@ -58,7 +58,7 @@ length(unique(liteumk$idno_original)) #114068
 
 ####Left censoring (change terms) for 2007 when HIV testing is done for all adults (15+)####
 if(lfc){
-  liteumk <- liteumk[which((liteumk$entry>='2007-01-01')),] 
+  liteumk <- liteumk[which((liteumk$entry>='2007-01-01')),] #1271610 remains representing 88693 individuals, 951,631 records discarded
 }
 
 #cases after left censoring
@@ -66,7 +66,7 @@ length(unique(liteumk$idno_original)) #88693
 
 ####Right censoring (change terms) for records with age>100####
 if(rtc){
-  liteumk <- liteumk[which((liteumk$age<=100)),] 
+  liteumk <- liteumk[which((liteumk$age<=100)),] #1271372 remains representing 88686 individuals, 238 records discarded
 }
 
 #cases after right censoring
@@ -126,6 +126,7 @@ dat <- cbind(dat,fail2)
 dim(dat) #1271372      45
 #sum(is.na(dat$fail2))
 table(dat$fail2, exclude = NULL) #1270599non-case ?giving 773 deaths from accidents only ?817 deaths from prev result
+
 
 #checking 2 methods of deriving fail2
 #tmp1 <- dat[dat$fail2==1,]
@@ -191,6 +192,35 @@ if(FALSE){
 dat <- dat[order(dat$entry, decreasing = T),] #LAST record
 #dat <- dat[order(dat$exit, decreasing = T),]
 datL <- dat[!duplicated(dat$idno_original),]
+
+#where are missing VA information distributed?####
+datL$nova <- 1*(is.na(datL$COD)&(datL$fail0==1))
+table(datL$fail0, datL$nova, exclude = NULL) #12 had va but didn't die
+#table(datL$sex, datL$nova)/rowSums(table(datL$sex, datL$nova))
+dead <- datL[datL$fail0==1,]
+#by sex
+table(dead$sex, dead$nova)
+table(dead$sex, dead$nova)/rowSums(table(dead$sex, dead$nova))
+#by agegrp15
+table(dead$agegrp15, dead$nova)
+table(dead$agegrp15, dead$nova)/rowSums(table(dead$agegrp15, dead$nova))
+#by allFixed
+table(dead$allFixed, dead$nova)
+table(dead$allFixed, dead$nova)/rowSums(table(dead$allFixed, dead$nova))
+#by art_status2
+table(dead$art_status2, dead$nova)
+table(dead$art_status2, dead$nova)/rowSums(table(dead$art_status2, dead$nova))
+
+#no. of external injury death by sex and HIV####
+table(dat$fail2,dat$sex)
+table(dat$fail2,dat$sex)/sum(dat$fail2)
+table(dat$fail2,dat$allFixed)
+table(dat$fail2,dat$allFixed)/sum(dat$fail2)
+table(dat$fail2,dat$allFixed)/colSums(table(dat$fail2,dat$allFixed))
+
+#% of external injury per calendar year####
+table(dat$fail2,dat$ct)
+table(dat$fail2,dat$ct)/(table(dat$fail0,dat$ct))[2,]
 
 ####Descriptive statistics of the last records####
 varDes <- c('sex','residence','hadva','failure','agegrp',
@@ -366,25 +396,18 @@ if(creation) write.csv(m.dist,paste("~/OneDrive/Summer Project/output/",gsub("\\
 
 
 #descriptions on HIV status
-#original rate
-hivstatus_broad.rate <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ hivstatus_broad, data=dat, scale = 1)
-hivstatus_broad.rate <- pyears2(hivstatus_broad.rate, per = 10000)
-if(creation) write.csv(hivstatus_broad.rate,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_hivstatus_broad_rate.csv",sep = "") )
+#HIV_asmr, to calculate standardized rates####
+hiv_Negative_rates <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ agegrp, data=dat[dat$allFixed=='Negative',], scale = 1)
+hiv_Negative_rates <- pyears2(hiv_Negative_rates, per=10000)
 
-#neg for 5 years
-hivstale5y.rate <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ hivstale5y, data=dat, scale = 1)
-hivstale5y.rate <- pyears2(hivstale5y.rate, per = 10000)
-if(creation) write.csv(hivstale5y.rate,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_hivstale5y_rate.csv",sep = "") )
+hiv_Positive_rates <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ agegrp, data=dat[dat$allFixed=='Positive',], scale = 1)
+hiv_Positive_rates <- pyears2(hiv_Positive_rates, per=10000)
 
-#neg for 5 years + missing data fixed
-missingFixed.rate <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ missingFixed, data=dat, scale = 1)
-missingFixed.rate <- pyears2(missingFixed.rate, per = 10000)
-if(creation) write.csv(missingFixed.rate,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_missingFixed_rate.csv",sep = "") )
+hiv_Unknown_rates <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ agegrp, data=dat[dat$allFixed=='Unknown',], scale = 1)
+hiv_Unknown_rates <- pyears2(hiv_Unknown_rates, per=10000)
 
-#neg for 5 years + seroconverter data fixed
-seroconFixed.rate <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ seroconFixed, data=dat, scale = 1)
-seroconFixed.rate <- pyears2(seroconFixed.rate, per = 10000)
-if(creation) write.csv(seroconFixed.rate,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_seroconFixed_rate.csv",sep = "") )
+hiv_asmr <- rbind(hiv_Negative_rates,hiv_Positive_rates,hiv_Unknown_rates)
+if(creation) write.csv(hiv_asmr,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_hiv_asmr.csv",sep = "") )
 
 #neg for 5 years + all fixed, final description####
 #inj cause
@@ -395,6 +418,41 @@ if(creation) write.csv(round(allFixed.rate,1),paste("~/OneDrive/Summer Project/o
 allFixed.allcause.rate <- pyears(Surv(time=time0, time2 = timex, event = fail0) ~ allFixed, data=dat, scale = 1)
 allFixed.allcause.rate <- pyears2(allFixed.allcause.rate, per = 10000)
 if(creation) write.csv(round(allFixed.allcause.rate,1),paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_allFixed_allcause_rate.csv",sep = "") )
+#rates among HIV status, by sex####
+#subsetting the LAST records
+dat <- dat[order(dat$entry, decreasing = T),] #LAST record
+#dat <- dat[order(dat$exit, decreasing = T),]
+datL <- dat[!duplicated(dat$idno_original),]
+individuals.hiv.sex <- table(datL$allFixed, datL$sex,  exclude = NULL)
+#inj cause, Men
+allFixed.rate.Men <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ allFixed, data=dat[dat$sex=='Men',], scale = 1)
+allFixed.rate.Men <- pyears2(allFixed.rate.Men, per = 10000)
+#if(creation) write.csv(round(allFixed.rate.Men,1),paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_allFixed_rate.csv",sep = "") )
+#all cause, Men
+allFixed.allcause.rate.Men <- pyears(Surv(time=time0, time2 = timex, event = fail0) ~ allFixed, data=dat[dat$sex=='Men',], scale = 1)
+allFixed.allcause.rate.Men <- pyears2(allFixed.allcause.rate.Men, per = 10000)
+#if(creation) write.csv(round(allFixed.allcause.rate.Men,1),paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_allFixed_allcause_rate.csv",sep = "") )
+HIVtable_Men <- cbind(individuals.hiv.sex[,1],allFixed.allcause.rate.Men,allFixed.rate.Men)
+if(creation) write.csv(round(HIVtable_Men,1),paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_HIVtable_Men.csv",sep = "") )
+#inj cause, Women
+allFixed.rate.Women <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ allFixed, data=dat[dat$sex=='Women',], scale = 1)
+allFixed.rate.Women <- pyears2(allFixed.rate.Women, per = 10000)
+#if(creation) write.csv(round(allFixed.rate.Women,1),paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_allFixed_rate.csv",sep = "") )
+#all cause, Women
+allFixed.allcause.rate.Women <- pyears(Surv(time=time0, time2 = timex, event = fail0) ~ allFixed, data=dat[dat$sex=='Women',], scale = 1)
+allFixed.allcause.rate.Women <- pyears2(allFixed.allcause.rate.Women, per = 10000)
+#if(creation) write.csv(round(allFixed.allcause.rate.Women,1),paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_allFixed_allcause_rate.csv",sep = "") )
+HIVtable_Women <- cbind(individuals.hiv.sex[,1],allFixed.allcause.rate.Women,allFixed.rate.Women)
+if(creation) write.csv(round(HIVtable_Women,1),paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_HIVtable_Women.csv",sep = "") )
+
+
+#inj cause by art_status2
+art_status2.rate <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ art_status2, data=dat[dat$sex=='Men',], scale = 1)
+art_status2.rate <- pyears2(art_status2.rate, per = 10000)
+if(creation) write.csv(round(art_status2.rate,1),paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_art_status2_rate_Men.csv",sep = "") )
+art_status2.rate <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ art_status2, data=dat[dat$sex=='Women',], scale = 1)
+art_status2.rate <- pyears2(art_status2.rate, per = 10000)
+if(creation) write.csv(round(art_status2.rate,1),paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_art_status2_rate_Women.csv",sep = "") )
 
 #overall (the whole population) rates####
 #all cause
@@ -405,7 +463,45 @@ if(creation) write.csv(allcause.rate,paste("~/OneDrive/Summer Project/output/",g
 inj.cause.rate <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ 1, data=dat, scale = 1)
 inj.cause.rate <- pyears2(inj.cause.rate, per = 10000)
 if(creation) write.csv(inj.cause.rate,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_inj_cause_rate.csv",sep = "") )
-
+#injury cause_overall
+inj.cause.rate2 <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ agegrp, data=dat, scale = 1)
+inj.cause.rate2 <- pyears2(inj.cause.rate2, per = 10000)
+if(creation) write.csv(inj.cause.rate2,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_inj_cause_overall_asmr.csv",sep = "") )
+#injury cause per calendar year
+inj.cause.rate3 <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ ct, data=dat, scale = 1)
+inj.cause.rate3 <- pyears2(inj.cause.rate3, per = 10000)
+if(creation) write.csv(inj.cause.rate3,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_inj_cause_calendaryear.csv",sep = "") )
+#age-standardized injury mortality per calendar year####
+WSP <- read.csv("/Users/sai/OneDrive/Summer Project/data/GBD/WSP.csv")
+#overall
+std_inj_ct <- NA
+for(i in 1:length(names(table(dat$ct)))){
+    tmp <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ agegrp, data=dat[dat$ct==names(table(dat$ct))[i],], scale = 1)
+    tmp <- pyears2(tmp, per=10000)
+    std_inj_ct[[i]] <- sum(tmp$Rate*WSP)
+}
+#Men
+std_inj_ct_Men <- NA
+dat_Men <- dat[dat$sex=='Men',]
+for(i in 1:length(names(table(dat$ct)))){
+  tmp <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ agegrp, data=dat_Men[dat_Men$ct==names(table(dat_Men$ct))[i],], scale = 1)
+  tmp <- pyears2(tmp, per=10000)
+  std_inj_ct_Men[[i]] <- sum(tmp$Rate*WSP)
+}
+#Women
+std_inj_ct_Women <- NA
+dat_Women <- dat[dat$sex=='Women',]
+for(i in 1:length(names(table(dat$ct)))){
+  tmp <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ agegrp, data=dat_Women[dat_Women$ct==names(table(dat_Women$ct))[i],], scale = 1)
+  tmp <- pyears2(tmp, per=10000)
+  std_inj_ct_Women[[i]] <- sum(tmp$Rate*WSP)
+}
+uMkhanyakude <- as.data.frame(rbind(std_inj_ct,std_inj_ct_Men,std_inj_ct_Women))
+uMkhanyakude <- cbind(cbind(c('Both', 'Male', 'Female'),rep('uMkhanyakude',3)), uMkhanyakude)
+colnames(uMkhanyakude) <- c('sex_name','location_name', names(table(dat$ct)))
+uMkhanyakudeMelt <- reshape::melt(uMkhanyakude, id.vars=c('sex_name','location_name'))
+colnames(uMkhanyakudeMelt) <- c('sex_name','location_name','year','val')
+if(creation) write.csv(uMkhanyakudeMelt,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_std_rate_peryear.csv",sep = ""))
 #no. of injury deaths against period for each sex####
 #Men
 dat.Men.inj <- dat[dat$sex=='Men' & dat$fail2==1,] #618 58
@@ -437,6 +533,54 @@ ggplot(inj_x_hiv.m, aes(fill=COD, y=value, x=allFixed)) +
   xlab("HIV status")+ylab("Proportion among injury-related deaths in each group")+
   scale_fill_discrete(name = "Deaths from external injury")+
   theme(text = element_text(size=16))
+dev.off()
+
+#no. of injury deaths against hiv status by sex, allFixed####
+dat.inj <- dat[dat$fail2==1,]
+dat.inj <- droplevels(dat.inj)
+dat.inj$period.2011_15 <- as.factor(dat.inj$period.2011_15)
+levels(dat.inj$period.2011_15) <- c("2007-10", "2011-15")
+inj_x_hiv <- table(dat.inj$COD, dat.inj$allFixed, dat.inj$period.2011_15, dat.inj$sex)
+inj_x_hiv.m <- melt(inj_x_hiv, c("COD","allFixed","period.2011_15", "sex"))
+
+#inj_x_hiv.abs <- dcast(inj_x_hiv.m, COD ~ allFixed+ period.2011_15+ sex, sum) #dataframe instead of graph
+inj_x_hiv.abs <- dcast(inj_x_hiv.m, COD ~ allFixed+ period.2011_15+sex, sum)
+
+lab <- colSums(inj_x_hiv.abs[,-1])
+allFixed <- c(rep('Negative',4),rep('Positive',4), rep('Unknown',4))
+period.2011_15 <- rep(c(rep('2007-10',2),rep('2011-15',2)),3)
+sex <- rep(c('Men','Women'),6)
+datlab.hiv.period.sex <- data.frame(x=allFixed,y=1.02, lab, sex,period.2011_15)
+
+# Stacked Percent
+png(paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_inj_x_hiv_period_sex.png",sep = ""), width = 1300, height = 900)
+ggplot(inj_x_hiv.m) +
+  facet_grid(. ~ sex+period.2011_15)+
+  geom_bar(aes(fill=COD, y=value, x=allFixed), stat="identity", position="fill") +
+  xlab("HIV status")+ylab("Proportion among injury-related deaths in each group")+
+  scale_fill_discrete(name = "Deaths from external injury")+
+  theme(text = element_text(size=16), legend.position = "bottom")+
+  geom_text(aes(x,y,label=lab), data=datlab.hiv.period.sex, size = 6)
+dev.off()
+
+#facet_grid(. ~ period.2011_15+sex)+
+
+#no. of injury deaths against hiv/art status, art_status2####
+dat.inj <- dat[dat$fail2==1,]
+dat.inj <- droplevels(dat.inj)
+dat.inj$period.2011_15 <- as.factor(dat.inj$period.2011_15)
+levels(dat.inj$period.2011_15) <- c("2007-10", "2011-15")
+inj_x_hiv <- table(dat.inj$COD, dat.inj$art_status2, dat.inj$period.2011_15)
+inj_x_hiv.m <- melt(inj_x_hiv, c("COD","art_status2","period.2011_15"))
+
+# Stacked Percent
+png(paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_inj_x_hivart_period.png",sep = ""), width = 1100, height = 900)
+ggplot(inj_x_hiv.m, aes(fill=COD, y=value, x=art_status2)) +
+  facet_grid(. ~ period.2011_15)+
+  geom_bar( stat="identity", position="fill") +
+  xlab("HIV/ART status")+ylab("Proportion among injury-related deaths in each group")+
+  scale_fill_discrete(name = "Deaths from external injury")+
+  theme(text = element_text(size=14))
 dev.off()
 }
 

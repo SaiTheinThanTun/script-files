@@ -302,8 +302,8 @@ estimates store B
 estat phtest, detail
 lrtest A B
 
-lincom 2.allFixed + 2.allFixed#2.sex
-lincom 3.allFixed + 3.allFixed#2.sex
+lincom 2.allFixed + 2.allFixed#2.sex, hr
+lincom 3.allFixed + 3.allFixed#2.sex, hr
 
 stcox i.allFixed i.sex ct
 estimates store A

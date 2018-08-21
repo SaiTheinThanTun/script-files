@@ -123,14 +123,16 @@ HIV.decom <- cbind(HIV.decom, age, sex)
 HIV.decom.L <- reshape::melt(HIV.decom, id.vars=c("age", "sex"))
 
 #labdat_hiv <- data.frame(x=4, y=5, lab=c("Total difference: 9.3 months", "Total difference: 1.3 months"), sex=c("Men","Women"))
-labdat_hiv <- data.frame(x=4, y=5, lab=c(paste("Total difference:",round(sum(decomList.Men.Positive.Negative[,8:18]),2),"months"), paste("Total difference:",round(sum(decomList.Women.Positive.Negative[,8:18]),2),"months")), sex=c("Men","Women"))
+labdat_hiv <- data.frame(x=4, y=5, lab=c(paste("Total difference, injury:",round(12*sum(decomList.Men.Positive.Negative[,8:18]),2),"months"), paste("Total difference, injury:",round(12*sum(decomList.Women.Positive.Negative[,8:18]),2),"months")), sex=c("Men","Women"))
+labdat_hiv2 <- data.frame(x=4, y=5, lab=c(paste("Total difference, all-cause:",round(sum(decomList.Men.Positive.Negative[,7]),2),"years"), paste("Total difference, all-cause:",round(sum(decomList.Women.Positive.Negative[,7]),2),"years")), sex=c("Men","Women"))
 png(paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_HIV_decom.png",sep = ""), width = 1100, height = 800)
 ggplot(HIV.decom.L) +
   geom_bar(aes(x=age, y=value, fill=variable), stat="identity") + facet_grid(. ~ sex)+ coord_flip()+
   ylab("Life-year difference in months")+
   scale_fill_discrete(name = "External injury type")+
   theme(text = element_text(size=16), legend.position = "bottom")+
-  geom_text(aes(x,y,label=lab), data=labdat_hiv, size = 6, vjust=1)
+  geom_text(aes(x,y,label=lab), data=labdat_hiv, size = 5, vjust=1)+
+  geom_text(aes(x,y,label=lab), data=labdat_hiv2, size = 5, vjust=4)
 dev.off()
 
 
@@ -304,27 +306,55 @@ period.decom <- cbind(period.decom, age, sex)
 period.decom.L <- reshape::melt(period.decom, id.vars=c("age", "sex"))
 
 #labdat_period <- data.frame(x=4, y=4, lab=c("Total difference: 8.9 months", "Total difference: 3.2 months"), sex=c("HIV+ Men","HIV+ Women"))
-labdat_period <- data.frame(x=4, y=4, lab=c(paste("Total difference:",round(sum(decomList.Men.Positive.2007.2011[,8:18]),2),"months"), paste("Total difference:",round(sum(decomList.Women.Positive.2007.2011[,8:18]),2),"months")), sex=c("Men","Women"))
+labdat_period <- data.frame(x=4, y=4, lab=c(paste("Total difference, injury:",round(12*sum(decomList.Men.Positive.2007.2011[,8:18]),2),"months"), paste("Total difference, injury:",round(12*sum(decomList.Women.Positive.2007.2011[,8:18]),2),"months")), sex=c("HIV+ Men","HIV+ Women"))
+labdat_period2 <- data.frame(x=4, y=4, lab=c(paste("Total difference, all-cause:",round(sum(decomList.Men.Positive.2007.2011[,7]),2),"years"), paste("Total difference, all-cause:",round(sum(decomList.Women.Positive.2007.2011[,7]),2),"years")), sex=c("HIV+ Men","HIV+ Women"))
 png(paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_positive_period_decom.png",sep = ""), width = 1100, height = 800)
 ggplot(period.decom.L) +
   geom_bar(aes(x=age, y=value, fill=variable), stat="identity") + facet_grid(. ~ sex)+ coord_flip()+
   ylab("Life-year difference in months")+
   scale_fill_discrete(name = "External injury type")+
   theme(text = element_text(size=16), legend.position = 'bottom')+
-  geom_text(aes(x,y,label=lab), data=labdat_period, size = 6, vjust=1)
+  geom_text(aes(x,y,label=lab), data=labdat_period, size = 5, vjust=1)+
+  geom_text(aes(x,y,label=lab), data=labdat_period2, size = 5, vjust=4)
+dev.off()
+
+
+#NEGATIVES
+decomList.Women.Negative.2007.2011 <- decomList(allcause.A = asmr.all.Women.Negative.2007, allcause.B = asmr.all.Women.Negative.2011, i_cause.A=injEventList.Women.Negative.2007, i_cause.B = injEventList.Women.Negative.2011, ageint = 15)
+colnames(decomList.Women.Negative.2007.2011) <- c(colnames(decomList.Women.Negative.2007.2011)[1:7],injNames)
+if(creation) write.csv(decomList.Women.Negative.2007.2011, paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_decomList_Women_Negative_2011_2007.csv",sep = ""))
+
+decomList.Men.Negative.2007.2011 <- decomList(allcause.A = asmr.all.Men.Negative.2007, allcause.B = asmr.all.Men.Negative.2011, i_cause.A=injEventList.Men.Negative.2007, i_cause.B = injEventList.Men.Negative.2011, ageint = 15)
+colnames(decomList.Men.Negative.2007.2011) <- c(colnames(decomList.Men.Negative.2007.2011)[1:7],injNames)
+if(creation) write.csv(decomList.Men.Negative.2007.2011, paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_decomList_Men_Negative_2011_2007.csv",sep = ""))
+
+Men.period.decom <- decomList.Men.Negative.2007.2011[,c(8:18)]*12
+
+Women.period.decom <- decomList.Women.Negative.2007.2011[,c(8:18)]*12
+
+period.decom <- rbind(Women.period.decom,Men.period.decom)
+period.decom <- period.decom[,which(colSums(period.decom)!=0)]
+age <- rep(c("15-29","30-44","45-59","60+"),2)
+sex <- rep(c("HIV- Women","HIV- Men"), each=4)
+period.decom <- cbind(period.decom, age, sex)
+#colnames(period.decom)[1] <- 'age'
+period.decom.L <- reshape::melt(period.decom, id.vars=c("age", "sex"))
+
+#labdat_period <- data.frame(x=4, y=4, lab=c("Total difference: 8.9 months", "Total difference: 3.2 months"), sex=c("HIV- Men","HIV- Women"))
+labdat_period <- data.frame(x=4, y=-3, lab=c(paste("Total difference, injury:",round(12*sum(decomList.Men.Negative.2007.2011[,8:18]),2),"months"), paste("Total difference, injury:",round(12*sum(decomList.Women.Negative.2007.2011[,8:18]),2),"months")), sex=c("HIV- Men","HIV- Women"))
+labdat_period2 <- data.frame(x=4, y=-3, lab=c(paste("Total difference, all-cause:",round(sum(decomList.Men.Negative.2007.2011[,7]),2),"years"), paste("Total difference, all-cause:",round(sum(decomList.Women.Negative.2007.2011[,7]),2),"years")), sex=c("HIV- Men","HIV- Women"))
+png(paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_Negative_period_decom.png",sep = ""), width = 1100, height = 800)
+ggplot(period.decom.L) +
+  geom_bar(aes(x=age, y=value, fill=variable), stat="identity") + facet_grid(. ~ sex)+ coord_flip()+
+  ylab("Life-year difference in months")+
+  scale_fill_discrete(name = "External injury type")+
+  theme(text = element_text(size=16), legend.position = 'bottom')+
+  geom_text(aes(x,y,label=lab), data=labdat_period, size = 5, vjust=1)+
+  geom_text(aes(x,y,label=lab), data=labdat_period2, size = 5, vjust=4)
 dev.off()
 
 dat <- dat.original #restroing original data for further analysis
 
-# #NEGATIVES
-# decomList.Women.Negative.2007.2011 <- decomList(allcause.A = asmr.all.Women.Negative.2007, allcause.B = asmr.all.Women.Negative.2011, i_cause.A=injEventList.Women.Negative.2007, i_cause.B = injEventList.Women.Negative.2011, ageint = 15)
-# colnames(decomList.Women.Negative.2007.2011) <- c(colnames(decomList.Women.Negative.2007.2011)[1:7],injNames)
-# if(creation) write.csv(decomList.Women.Negative.2007.2011, paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_decomList_Women_Negative_2011_2007.csv",sep = ""))
-# 
-# decomList.Men.Negative.2007.2011 <- decomList(allcause.A = asmr.all.Men.Negative.2007, allcause.B = asmr.all.Men.Negative.2011, i_cause.A=injEventList.Men.Negative.2007, i_cause.B = injEventList.Men.Negative.2011, ageint = 15)
-# colnames(decomList.Men.Negative.2007.2011) <- c(colnames(decomList.Men.Negative.2007.2011)[1:7],injNames)
-# if(creation) write.csv(decomList.Men.Negative.2007.2011, paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_decomList_Men_Negative_2011_2007.csv",sep = ""))
-# 
 # #UNKNOWNS
 # decomList.Women.Unknown.2007.2011 <- decomList(allcause.A = asmr.all.Women.Unknown.2007, allcause.B = asmr.all.Women.Unknown.2011, i_cause.A=injEventList.Women.Unknown.2007, i_cause.B = injEventList.Women.Unknown.2011, ageint = 15)
 # colnames(decomList.Women.Unknown.2007.2011) <- c(colnames(decomList.Women.Unknown.2007.2011)[1:7],injNames)

@@ -6,7 +6,7 @@ cd "/Users/sai/OneDrive/Summer Project/data"
 
 //log using "proj_log.log", replace
 
-//use "alpha_uMkhanyakude-170601.dta" //2nd original version
+//use "alpha_uMkhanyakude-170601.dta" //2nd original version with stsplit by age
 
 * new hivstat variable based on 5 years post-negative follow up time.
 /*
