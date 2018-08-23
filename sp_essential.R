@@ -409,6 +409,58 @@ hiv_Unknown_rates <- pyears2(hiv_Unknown_rates, per=10000)
 hiv_asmr <- rbind(hiv_Negative_rates,hiv_Positive_rates,hiv_Unknown_rates)
 if(creation) write.csv(hiv_asmr,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_hiv_asmr.csv",sep = "") )
 
+#HIV_asmr, agegrp####
+#5year agegroup
+#HIV_asmr, Men####
+hiv_Negative_rates_Men <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ agegrp, data=dat[dat$allFixed=='Negative'&dat$sex=='Men',], scale = 1)
+hiv_Negative_rates_Men <- pyears2(hiv_Negative_rates_Men, per=10000)
+hiv_Negative_rates_Men_Rate <- hiv_Negative_rates_Men$Rate
+
+hiv_Positive_rates_Men <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ agegrp, data=dat[dat$allFixed=='Positive'&dat$sex=='Men',], scale = 1)
+hiv_Positive_rates_Men <- pyears2(hiv_Positive_rates_Men, per=10000)
+hiv_Positive_rates_Men_Rate <- hiv_Positive_rates_Men$Rate
+
+hiv_Unknown_rates_Men <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ agegrp, data=dat[dat$allFixed=='Unknown'&dat$sex=='Men',], scale = 1)
+hiv_Unknown_rates_Men <- pyears2(hiv_Unknown_rates_Men, per=10000)
+hiv_Unknown_rates_Men_Rate <- hiv_Unknown_rates_Men$Rate
+
+Men_Rate <- as.data.frame(cbind(hiv_Negative_rates_Men_Rate,hiv_Positive_rates_Men_Rate,hiv_Unknown_rates_Men_Rate))
+Men_Rate <- as.data.frame(cbind(Men_Rate,row.names(hiv_Negative_rates_Men), rep("Men",nrow(Men_Rate))))
+colnames(Men_Rate) <- c('Negative','Positive','Unknown','Age','Sex')
+
+#HIV_asmr, Women####
+hiv_Negative_rates_Women <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ agegrp, data=dat[dat$allFixed=='Negative'&dat$sex=='Women',], scale = 1)
+hiv_Negative_rates_Women <- pyears2(hiv_Negative_rates_Women, per=10000)
+hiv_Negative_rates_Women_Rate <- hiv_Negative_rates_Women$Rate
+
+hiv_Positive_rates_Women <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ agegrp, data=dat[dat$allFixed=='Positive'&dat$sex=='Women',], scale = 1)
+hiv_Positive_rates_Women <- pyears2(hiv_Positive_rates_Women, per=10000)
+hiv_Positive_rates_Women_Rate <- hiv_Positive_rates_Women$Rate
+
+hiv_Unknown_rates_Women <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ agegrp, data=dat[dat$allFixed=='Unknown'&dat$sex=='Women',], scale = 1)
+hiv_Unknown_rates_Women <- pyears2(hiv_Unknown_rates_Women, per=10000)
+hiv_Unknown_rates_Women_Rate <- hiv_Unknown_rates_Women$Rate
+
+Women_Rate <- as.data.frame(cbind(hiv_Negative_rates_Women_Rate,hiv_Positive_rates_Women_Rate,hiv_Unknown_rates_Women_Rate))
+Women_Rate <- as.data.frame(cbind(Women_Rate,row.names(hiv_Negative_rates_Women), rep("Women",nrow(Women_Rate))))
+colnames(Women_Rate) <- c('Negative','Positive','Unknown','Age','Sex')
+
+#plotting ASMR from external injury by sex and HIV
+ASMR_plot <- rbind(Men_Rate,Women_Rate)
+ASMR_plot_m <- melt(ASMR_plot, id.vars = c('Age','Sex'))
+colnames(ASMR_plot_m) <- c('Age','Sex','HIV_status','Rate')
+
+png(paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_asmr_HIV_sex.png",sep = ""), width = 1100, height = 800)
+ggplot(ASMR_plot_m)+
+  geom_line(aes(x=Age,y=Rate, col=HIV_status, group=HIV_status))+
+  facet_wrap(~Sex)+
+  ylab("Age-specific external injury mortality rate per 10,000 PY")+
+  xlab("Age group")+
+  theme(text = element_text(size=16), legend.position = "bottom")
+dev.off()
+
+#HIV_asmr, single agegroup doesn't work
+
 #neg for 5 years + all fixed, final description####
 #inj cause
 allFixed.rate <- pyears(Surv(time=time0, time2 = timex, event = fail2) ~ allFixed, data=dat, scale = 1)
