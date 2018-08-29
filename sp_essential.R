@@ -494,7 +494,7 @@ allFixed.rate.Women <- pyears2(allFixed.rate.Women, per = 10000)
 allFixed.allcause.rate.Women <- pyears(Surv(time=time0, time2 = timex, event = fail0) ~ allFixed, data=dat[dat$sex=='Women',], scale = 1)
 allFixed.allcause.rate.Women <- pyears2(allFixed.allcause.rate.Women, per = 10000)
 #if(creation) write.csv(round(allFixed.allcause.rate.Women,1),paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_allFixed_allcause_rate.csv",sep = "") )
-HIVtable_Women <- cbind(individuals.hiv.sex[,1],allFixed.allcause.rate.Women,allFixed.rate.Women)
+HIVtable_Women <- cbind(individuals.hiv.sex[,2],allFixed.allcause.rate.Women,allFixed.rate.Women)
 if(creation) write.csv(round(HIVtable_Women,1),paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_HIVtable_Women.csv",sep = "") )
 
 
