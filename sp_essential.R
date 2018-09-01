@@ -211,6 +211,9 @@ table(dead$allFixed, dead$nova)/rowSums(table(dead$allFixed, dead$nova))
 table(dead$art_status2, dead$nova)
 table(dead$art_status2, dead$nova)/rowSums(table(dead$art_status2, dead$nova))
 
+noVA <- rbind(table(dead$sex, dead$nova),table(dead$agegrp15, dead$nova),table(dead$allFixed, dead$nova))
+if(creation) write.csv(noVA,paste("~/OneDrive/Summer Project/output/",gsub("\\:","",Sys.time()),"_noVA.csv",sep = ""))
+
 #no. of external injury death by sex and HIV####
 table(dat$fail2,dat$sex)
 table(dat$fail2,dat$sex)/sum(dat$fail2)

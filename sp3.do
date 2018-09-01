@@ -14,6 +14,13 @@ ta art_status2, gen(art_status2)
 
 stset exit, id(idno_original) failure(fail2) time0(entry) origin(time dob) scale(365.25)
 
+//smooth hazards
+gen HIVstatus = allFixed
+label define hivstat 1 "Negative" 2 "Positive" 3 "Unknown"
+label value HIVstatus hivstat
+sts graph,hazard by(HIVstatus)
+sts graph if sex==1,hazard by(HIVstatus) yscale(range(0 .008))
+sts graph if sex==2,hazard by(HIVstatus) yscale(range(0 .008))
 
 //ct squared
 gen cen_ct=ct-2011.35 
@@ -30,7 +37,7 @@ stcox i.sex
 
 stcox ct
 
-stcox residence2
+stcox i.residence2
 
 stcox ib2.art_status2 
 

@@ -52,6 +52,8 @@ asdt.inj.del$s_ex[1]-asdt.inj.del$ex[1] #1.868421 years
 #e15 gain, comparison within itself in HIV group, 5 year agegrp####
 #hivstatus allFixed has beeen used
 #1 year age group doesn't work as data is inadequate: producing NaN
+#5 year age group is used
+
 #Women
 dat.Women <- dat[dat$sex=='Women',]
 #Negative
@@ -108,6 +110,7 @@ if(creation) write.csv(e15.increase, paste("~/OneDrive/Summer Project/output/",g
 
 #e15 gain, comparison within itself in HIV group and between 2007-10 & 2011-15####
 #hivstatus allFixed has beeen used
+#5 year age group is used
 
 #_del_2007####
 dat.original <- dat

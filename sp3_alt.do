@@ -5,7 +5,8 @@
 clear
 cd "/Users/sai/OneDrive/Summer Project/stata/"
 capture log close
-log using "_allFixed.log", replace
+//log using "_allFixed.log", replace
+log using "_.log", replace
 use "processed2.dta"
 set more off 
 
@@ -17,6 +18,70 @@ ta allFixed, gen(allFixed)
 
 stset exit, id(idno_original) failure(fail2) time0(entry) origin(time dob) scale(365.25)
 
+//ssc install stpm2
+//stpm2 fail2, scale(hazard) tvc(allFixed) df(3) dftvc(2) // not working
+/*
+stpm2 allFixed, df(4) scale(hazard)
+predict h, hazard ci
+predict s, survival ci
+gen h10000=h*10000
+twoway (line h10000 _t if allFixed==2 & sex==1, sort clpattern(solid)) ///
+		(line h10000 _t if allFixed==1 & sex==1, sort clpattern(longdash)) ///
+		(line h10000 _t if allFixed==3 & sex==1, sort clpattern(thin))
+
+twoway (line h10000 _t if allFixed==2 & sex==2, sort clpattern(solid)) ///
+		(line h10000 _t if allFixed==1 & sex==2, sort clpattern(longdash)) */
+		
+stpm2 allFixed2-allFixed3 if sex==1, df(3) scale(hazard)
+predict h, hazard ci
+//predict s, survival ci
+gen h10000=h*10000
+twoway (line h10000 _t if allFixed==1, sort clpattern(solid)) ///
+		(line h10000 _t if allFixed==2, sort clpattern(longdash)) ///
+		(line h10000 _t if allFixed==3, sort clpattern(shortdash)) ///
+		, scheme(sj) ytitle("Injury Mortality Rate per 10,000 PY") ///
+		xtitle("Age (years)") ///
+		title("Injury Mortality Rate in Men") ///
+		legend(order(1 "Negative" 2 "Positive" 3 "Unknown") ///
+				ring(0) pos(4) cols(1) subtitle("HIV status")) name(h,replace)
+
+stpm2 allFixed2-allFixed3 if sex==2, df(3) scale(hazard)
+predict h2, hazard ci
+//predict s2, survival ci
+gen h100002=h2*10000
+twoway (line h100002 _t if allFixed==1, sort clpattern(solid)) ///
+		(line h100002 _t if allFixed==2, sort clpattern(longdash)) ///
+		(line h100002 _t if allFixed==3, sort clpattern(shortdash)) ///
+		, scheme(sj) ylabel(0(10)50) ytitle("Injury Mortality Rate per 10,000 PY") ///
+		yscale(range(0(10)50)) ///
+		xtitle("Age (years)") ///
+		title("Injury Mortality Rate in Women") ///
+		legend(order(1 "Negative" 2 "Positive" 3 "Unknown") ///
+				ring(0) pos(4) cols(1) subtitle("HIV status")) name(h2,replace)
+
+		/*
+stpm2 allFixed2 if sex==2, df(3) scale(hazard)
+predict h3, hazard ci
+gen h100003=h3*10000
+//twoway (line h100003 _t, sort clpattern(solid)) 
+twoway (line h100003 _t if allFixed==1, sort clpattern(solid)) ///
+		(line h100003 _t if allFixed==2, sort clpattern(longdash)) ///
+		(line h100003 _t if allFixed==3, sort clpattern(thin))
+
+stpm2 allFixed2 if sex==1, df(3) scale(hazard)
+predict h4, hazard ci
+gen h100004=h4*10000
+twoway (line h100003 _t, sort clpattern(solid)) 
+
+*/
+		
+//smooth hazards
+gen HIVstatus = allFixed
+label define hivstat 1 "Negative" 2 "Positive" 3 "Unknown"
+label value HIVstatus hivstat
+sts graph,hazard by(HIVstatus)
+sts graph if sex==1,hazard by(HIVstatus) yscale(range(0 .008))
+sts graph if sex==2,hazard by(HIVstatus) yscale(range(0 .008))
 
 //new ART status variable
 stcox i.sex
