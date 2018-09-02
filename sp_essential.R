@@ -945,6 +945,11 @@ summary(coxph(Surv(time=timex-time0, event = fail2) ~ factor(period.2011_15), da
 #H0: Injury related mortality decreases in people living in rural area
 summary(coxph(Surv(time=timex-time0, event = fail2) ~ factor(residence), data=dat)) #factor(residence)2 0.02143   1.02166  0.17342 0.124    0.902
 
+#HIV period prevalence between 2007-2015
+aliveHIV <- datL[datL$fail0!=1,]
+table(aliveHIV$allFixed)/sum(table(aliveHIV$allFixed))
+#
+
 #H0: HIV prevalence differs between urban, semi-urban and rural area
 table(datL$allFixed, datL$residence)
 prop.table(table(datL$allFixed, datL$residence),2)
